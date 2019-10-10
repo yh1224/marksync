@@ -8,6 +8,7 @@ import $ivy.`com.fasterxml.jackson.core:jackson-core:2.10.0.pr3`
 import $ivy.`com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.9.9`
 import $ivy.`com.fasterxml.jackson.module:jackson-module-scala_2.12:2.10.0.pr3`
 import $ivy.`io.github.cdimascio:java-dotenv:5.1.2`
+import $ivy.`io.github.java-diff-utils:java-diff-utils:4.0`
 import $ivy.`net.sourceforge.plantuml:plantuml:6703`
 import $ivy.`org.slf4j:slf4j-log4j12:1.7.28`
 //import $ivy.`software.amazon.awssdk:bom:2.9.7`
@@ -18,6 +19,8 @@ import com.fasterxml.jackson.annotation._
 import com.fasterxml.jackson.databind._
 import com.fasterxml.jackson.dataformat.yaml._
 import com.fasterxml.jackson.module.scala._
+import com.github.difflib.DiffUtils
+import com.github.difflib.patch.{ChangeDelta, DeleteDelta, InsertDelta}
 import com.softwaremill.sttp._
 import io.github.cdimascio.dotenv.Dotenv
 import net.sourceforge.plantuml.code.TranscoderUtil
@@ -27,6 +30,7 @@ import software.amazon.awssdk.http.apache.ApacheHttpClient
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model._
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 
@@ -145,50 +149,47 @@ trait ServiceDocument {
   /**
    * Save body data to file.
    *
-   * @param file Target file
+   * @param file Target fileiff(
    */
   def saveBody(file: File): Unit
 
   /**
    * Check modified.
    *
-   * @param oldDoc   Old document
-   * @param uploader Uploader
+   * @param oldDoc    Old document
+   * @param uploader  Uploader
+   * @param printDiff true to print differ
    */
-  def isModified(oldDoc: ServiceDocument, uploader: Option[Uploader]): Boolean
+  def isModified(oldDoc: ServiceDocument, uploader: Option[Uploader], printDiff: Boolean = false): Boolean
 
   /**
-   * Normalize body string.
+   * Print diff.
    *
-   * @param body body
-   * @return
+   * @param name      Name
+   * @param source    Source string
+   * @param target    Target string
+   * @param printDiff true to print differ
+   * @return true:differ
    */
-  def normalizeBody(body: String): String = {
-    body.trim().replaceAll("\r\n", "\n")
-  }
-
-  /**
-   * Print document diff.
-   *
-   * @param other Object to compare
-   */
-  def showDiffer(other: ServiceDocument): Boolean = {
-    val differs = this.getClass.getDeclaredFields.map { field =>
-      field.setAccessible(true)
-      val valueOf = (obj: Object, field: Field) =>
-        field.get(obj) match {
-          case s: String => s.trim().replaceAll("\r\n", "\n")
-          case o: Any => o
-        }
-      val diff = !valueOf(this, field).equals(valueOf(other, field))
-      if (diff) {
-        println(s"  ${field.getName}:")
-        println(s"  - ${Mapper.getJson(field.get(this))}")
-        println(s"  + ${Mapper.getJson(field.get(other))}")
-      }
-      diff
+  protected def diff[A](name: String, source: A, target: A, printDiff: Boolean): Boolean = {
+    val valueOf = (obj: A) => obj match {
+      case s: String => s.trim().split("\r?\n").toList.asJava
+      case o: Any => List(Mapper.getJson(o)).asJava
     }
-    differs.contains(true)
+    val patch = DiffUtils.diff(valueOf(source), valueOf(target))
+    if (printDiff && !patch.getDeltas.isEmpty) {
+      println(s"  [$name]")
+      patch.getDeltas.forEach {
+        case delta: InsertDelta[String] =>
+          delta.getTarget.getLines.forEach(line => println(s"  +$line"))
+        case delta: DeleteDelta[String] =>
+          delta.getSource.getLines.forEach(line => println(s"  -$line"))
+        case delta: ChangeDelta[String] =>
+          delta.getSource.getLines.forEach(line => println(s"  -$line"))
+          delta.getTarget.getLines.forEach(line => println(s"  +$line"))
+      }
+    }
+    !patch.getDeltas.isEmpty
   }
 }
 
@@ -245,11 +246,11 @@ trait Service {
   /**
    * Sync documents to service.
    *
-   * @param doc       Document
-   * @param uploader  Uploader
-   * @param checkOnly Set true to check only
+   * @param doc      Document
+   * @param uploader Uploader
+   * @param check    Set true to check only
    */
-  def sync(doc: Document, uploader: Option[Uploader], checkOnly: Boolean): Unit = {
+  def sync(doc: Document, uploader: Option[Uploader], check: Boolean): Unit = {
     val target = doc.dir.getPath
     this.toServiceDocument(doc, uploader).foreach { newDoc =>
       // update document
@@ -264,9 +265,10 @@ trait Service {
             uploader.exists(_.isModified(filename, file))
           }
           if (docModified || filesModified) {
-            println(s"M $target")
-            // oldDoc.showDiffer(newDoc)
-            if (!checkOnly) {
+            println(s"! $target")
+            if (check) {
+              newDoc.isModified(oldDoc, uploader, printDiff = true)
+            } else {
               if (uploader.isDefined) {
                 // upload files
                 doc.files.foreach { case (filename, file) =>
@@ -290,15 +292,15 @@ trait Service {
               }
             }
           } else {
-            println(s"- $target: not modified")
+            println(s"  $target: not modified")
           }
         } else {
-          println(s"X $target: ($docId) not exists.")
+          println(s"? $target: ($docId) not exists.")
         }
       } else {
         // new item
-        println(s"C $target")
-        if (!checkOnly) {
+        println(s"+ $target")
+        if (!check) {
           val updatedItemOpt = update(newDoc, uploader)
           updatedItemOpt match {
             case Some(item) =>
@@ -490,13 +492,15 @@ case class QiitaItem
     writer.close()
   }
 
-  override def isModified(oldDoc: ServiceDocument, uploader: Option[Uploader]): Boolean = {
+  override def isModified(oldDoc: ServiceDocument, uploader: Option[Uploader], printDiff: Boolean = false): Boolean = {
     val oldItem = oldDoc.asInstanceOf[QiitaItem]
     val fileMap = uploader.map(_.getFileMap).getOrElse(Map[String, String]())
-    this.tags != oldItem.tags ||
-      this.`private` != oldItem.`private` ||
-      this.getTitle != oldItem.title ||
-      normalizeBody(this.getBody(fileMap)) != normalizeBody(oldItem.body)
+    Seq(
+      diff("tags", oldItem.tags, this.tags, printDiff),
+      diff("private", oldItem.`private`, this.`private`, printDiff),
+      diff("title", oldItem.title, this.getTitle, printDiff),
+      diff("body", oldItem.body, this.getBody(fileMap), printDiff)
+    ).contains(true)
   }
 }
 
@@ -699,14 +703,16 @@ case class EsaPost
     writer.close()
   }
 
-  override def isModified(oldDoc: ServiceDocument, uploader: Option[Uploader]): Boolean = {
+  override def isModified(oldDoc: ServiceDocument, uploader: Option[Uploader], printDiff: Boolean = false): Boolean = {
     val oldPost = oldDoc.asInstanceOf[EsaPost]
     val fileMap = uploader.map(_.getFileMap).getOrElse(Map[String, String]())
-    this.category != oldPost.category ||
-      this.tags != oldPost.tags ||
-      this.wip != oldPost.wip ||
-      this.getTitle != oldPost.name ||
-      normalizeBody(this.getBody(fileMap)) != normalizeBody(oldPost.body_md)
+    Seq(
+      diff("category", oldPost.category, this.category, printDiff),
+      diff("tags", oldPost.tags, this.tags, printDiff),
+      diff("wip", oldPost.wip, this.wip, printDiff),
+      diff("title", oldPost.name, this.getTitle, printDiff),
+      diff("body", oldPost.body_md, this.getBody(fileMap), printDiff)
+    ).contains(true)
   }
 }
 
@@ -849,18 +855,18 @@ def fetchAll(outDir: File, service: Service): Unit = {
 /**
  * Sync all documents under the directory.
  *
- * @param fromDir   Input directory path
- * @param service   Service object
- * @param uploader  Uploader
- * @param checkOnly Set true to check only
+ * @param fromDir  Input directory path
+ * @param service  Service object
+ * @param uploader Uploader
+ * @param check    Set true to check only
  */
-def updateAll(fromDir: File, service: Service, uploader: Option[Uploader], checkOnly: Boolean): Unit = {
+def updateAll(fromDir: File, service: Service, uploader: Option[Uploader], check: Boolean): Unit = {
   listFiles(fromDir)
     .filter(_.getName == "index.md")
     .map(_.getParentFile)
     .foreach { dir =>
       val doc = Document(dir)
-      service.sync(doc, uploader, checkOnly)
+      service.sync(doc, uploader, check)
     }
 }
 
@@ -913,11 +919,11 @@ def fetch(output: String, env: String = ".env"): Unit = {
 @main
 def check(target: String, env: String = ".env"): Unit = {
   val dotEnv = Dotenv.configure().filename(env).load()
-  updateAll(new File(target), getService(dotEnv), getUploader(dotEnv), checkOnly = true)
+  updateAll(new File(target), getService(dotEnv), getUploader(dotEnv), check = true)
 }
 
 @main
 def update(target: String, env: String = ".env"): Unit = {
   val dotEnv = Dotenv.configure().filename(env).load()
-  updateAll(new File(target), getService(dotEnv), getUploader(dotEnv), checkOnly = false)
+  updateAll(new File(target), getService(dotEnv), getUploader(dotEnv), check = false)
 }
