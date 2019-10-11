@@ -1,12 +1,13 @@
 import java.io.{File, FileWriter}
-import java.lang.reflect.Field
 import java.nio.file.Files
+import java.security.MessageDigest
 import java.text.SimpleDateFormat
 import java.util.UUID
 
 import $ivy.`com.fasterxml.jackson.core:jackson-core:2.10.0.pr3`
 import $ivy.`com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.9.9`
 import $ivy.`com.fasterxml.jackson.module:jackson-module-scala_2.12:2.10.0.pr3`
+import $ivy.`commons-codec:commons-codec:1.13`
 import $ivy.`io.github.cdimascio:java-dotenv:5.1.2`
 import $ivy.`io.github.java-diff-utils:java-diff-utils:4.0`
 import $ivy.`net.sourceforge.plantuml:plantuml:6703`
@@ -24,6 +25,7 @@ import com.github.difflib.patch.{ChangeDelta, DeleteDelta, InsertDelta}
 import com.softwaremill.sttp._
 import io.github.cdimascio.dotenv.Dotenv
 import net.sourceforge.plantuml.code.TranscoderUtil
+import org.apache.commons.codec.binary.Hex
 import requests.RequestAuth.Bearer
 import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider
 import software.amazon.awssdk.http.apache.ApacheHttpClient
@@ -315,7 +317,20 @@ trait Service {
   }
 }
 
-case class FileInfo(filename: String, lastModified: Long, url: Option[String])
+case class FileInfo(filename: String, digest: String, url: Option[String]) {
+  def isIdenticalTo(file: File): Boolean = digest == FileInfo.sha1(file)
+}
+
+object FileInfo {
+  def apply(filename: String, file: File, url: Option[String]): FileInfo =
+    FileInfo(filename, sha1(file), url)
+
+  def sha1(file: File): String = {
+    val digest = MessageDigest.getInstance("SHA-1")
+    digest.update(Files.readAllBytes(file.toPath))
+    Hex.encodeHexString(digest.digest)
+  }
+}
 
 case class UploadMeta(var files: Seq[FileInfo] = Seq()) {
   def getFileInfo(filename: String): Option[FileInfo] = files.find(_.filename == filename)
@@ -328,7 +343,7 @@ case class UploadMeta(var files: Seq[FileInfo] = Seq()) {
    * @param url      URL
    */
   def setFileInfo(filename: String, file: File, url: Option[String] = None): Unit = {
-    files = files.filter(_.filename != filename) :+ FileInfo(filename, file.lastModified, url)
+    files = files.filter(_.filename != filename) :+ FileInfo(filename, file, url)
   }
 }
 
@@ -345,10 +360,8 @@ trait Uploader {
    * @param file     file
    * @return true if modified
    */
-  def isModified(filename: String, file: File): Boolean = {
-    val fileInfo = meta.getFileInfo(filename)
-    fileInfo.isEmpty || fileInfo.get.lastModified != file.lastModified()
-  }
+  def isModified(filename: String, file: File): Boolean =
+    !meta.getFileInfo(filename).exists(_.isIdenticalTo(file))
 
   /**
    * Get filename to URL map.
