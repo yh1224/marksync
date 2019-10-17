@@ -251,8 +251,9 @@ trait Service {
    * @param doc      Document
    * @param uploader Uploader
    * @param check    Set true to check only
+   * @param verbose  Output verbose message
    */
-  def sync(doc: Document, uploader: Option[Uploader], check: Boolean): Unit = {
+  def sync(doc: Document, uploader: Option[Uploader], check: Boolean, verbose: Boolean): Unit = {
     val target = doc.dir.getPath
     this.toServiceDocument(doc, uploader).foreach { newDoc =>
       // update document
@@ -269,7 +270,9 @@ trait Service {
           if (docModified || filesModified) {
             println(s"! $target")
             if (check) {
-              newDoc.isModified(oldDoc, uploader, printDiff = true)
+              if (verbose) {
+                newDoc.isModified(oldDoc, uploader, printDiff = true)
+              }
             } else {
               if (uploader.isDefined) {
                 // upload files
@@ -436,7 +439,6 @@ case class QiitaItemMeta
   url: Option[String] = None,
   upload: Option[UploadMeta] = None
 )
-
 
 case class QiitaItemTag
 (
@@ -872,14 +874,15 @@ def fetchAll(outDir: File, service: Service): Unit = {
  * @param service  Service object
  * @param uploader Uploader
  * @param check    Set true to check only
+ * @param verbose  Output verbose message
  */
-def updateAll(fromDir: File, service: Service, uploader: Option[Uploader], check: Boolean): Unit = {
+def updateAll(fromDir: File, service: Service, uploader: Option[Uploader], check: Boolean, verbose: Boolean): Unit = {
   listFiles(fromDir)
     .filter(_.getName == "index.md")
     .map(_.getParentFile)
     .foreach { dir =>
       val doc = Document(dir)
-      service.sync(doc, uploader, check)
+      service.sync(doc, uploader, check, verbose)
     }
 }
 
@@ -930,13 +933,13 @@ def fetch(output: String, env: String = ".env"): Unit = {
 }
 
 @main
-def check(target: String, env: String = ".env"): Unit = {
+def check(target: String, env: String = ".env", verbose: Boolean = false): Unit = {
   val dotEnv = Dotenv.configure().filename(env).load()
-  updateAll(new File(target), getService(dotEnv), getUploader(dotEnv), check = true)
+  updateAll(new File(target), getService(dotEnv), getUploader(dotEnv), check = true, verbose = verbose)
 }
 
 @main
-def update(target: String, env: String = ".env"): Unit = {
+def update(target: String, env: String = ".env", verbose: Boolean = false): Unit = {
   val dotEnv = Dotenv.configure().filename(env).load()
-  updateAll(new File(target), getService(dotEnv), getUploader(dotEnv), check = false)
+  updateAll(new File(target), getService(dotEnv), getUploader(dotEnv), check = false, verbose = verbose)
 }
