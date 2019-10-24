@@ -256,7 +256,8 @@ trait Service {
   def sync(doc: Document, uploader: Option[Uploader], check: Boolean, verbose: Boolean): Unit = {
     val target = doc.dir.getPath
     this.toServiceDocument(doc, uploader).foreach { newDoc =>
-      // update document
+      // check document
+      var doSync = false
       if (newDoc.getId.isDefined) {
         // update item
         val docId = newDoc.getId.get
@@ -268,33 +269,11 @@ trait Service {
             uploader.exists(_.isModified(filename, file))
           }
           if (docModified || filesModified) {
+            // modified
             println(s"! $target")
-            if (check) {
-              if (verbose) {
-                newDoc.isModified(oldDoc, uploader, printDiff = true)
-              }
-            } else {
-              if (uploader.isDefined) {
-                // upload files
-                doc.files.foreach { case (filename, file) =>
-                  if (uploader.get.isModified(filename, file)) {
-                    val url = uploader.get.sync(filename, file)
-                    if (url.isDefined) {
-                      println(s"  ->uploaded. $filename to ${url.get}")
-                    } else {
-                      println(s"  ->upload failed. $filename")
-                    }
-                  }
-                }
-              }
-              val updatedDocOpt = update(newDoc, uploader)
-              updatedDocOpt match {
-                case Some(item) =>
-                  println(s"  ->updated. ${item.getUrl.get}")
-                  saveMeta(new File(doc.dir, META_FILENAME), item, uploader)
-                case None =>
-                  println(s"  ->failed.")
-              }
+            doSync = true
+            if (verbose) {
+              newDoc.isModified(oldDoc, uploader, printDiff = true)
             }
           } else {
             println(s"  $target: not modified")
@@ -303,17 +282,33 @@ trait Service {
           println(s"? $target: ($docId) not exists.")
         }
       } else {
-        // new item
+        // new
         println(s"+ $target")
-        if (!check) {
-          val updatedItemOpt = update(newDoc, uploader)
-          updatedItemOpt match {
-            case Some(item) =>
-              println(s"  ->created. ${item.getUrl.get}")
-              saveMeta(new File(doc.dir, META_FILENAME), item, uploader)
-            case None =>
-              println(s"  ->failed.")
+        doSync = true
+      }
+
+      // update document
+      if (doSync && !check) {
+        if (uploader.isDefined) {
+          // upload files
+          doc.files.foreach { case (filename, file) =>
+            if (uploader.get.isModified(filename, file)) {
+              val url = uploader.get.sync(filename, file)
+              if (url.isDefined) {
+                println(s"  ->uploaded. $filename to ${url.get}")
+              } else {
+                println(s"  ->upload failed. $filename")
+              }
+            }
           }
+        }
+        val updatedDocOpt = update(newDoc, uploader)
+        updatedDocOpt match {
+          case Some(item) =>
+            println(s"  ->updated. ${item.getUrl.get}")
+            saveMeta(new File(doc.dir, META_FILENAME), item, uploader)
+          case None =>
+            println(s"  ->failed.")
         }
       }
     }
