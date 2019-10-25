@@ -121,6 +121,14 @@ trait ServiceDocument {
   def getUrl: Option[String]
 
   /**
+   * Get digest.
+   *
+   * @param uploader Uploader
+   * @return
+   */
+  def getDigest(uploader: Option[Uploader] = None): String
+
+  /**
    * Get document title.
    *
    * @return document title
@@ -224,9 +232,9 @@ trait Service {
    *
    * @param doc      Document
    * @param uploader Uploader
-   * @return ServiceDocument object
+   * @return ServiceDocument object and expect digest
    */
-  def toServiceDocument(doc: Document, uploader: Option[Uploader]): Option[ServiceDocument]
+  def toServiceDocument(doc: Document, uploader: Option[Uploader]): Option[(ServiceDocument, Option[String])]
 
   /**
    * Save meta data to file.
@@ -255,7 +263,7 @@ trait Service {
    */
   def sync(doc: Document, uploader: Option[Uploader], check: Boolean, verbose: Boolean): Unit = {
     val target = doc.dir.getPath
-    this.toServiceDocument(doc, uploader).foreach { newDoc =>
+    this.toServiceDocument(doc, uploader).foreach { case (newDoc, expectDigestOpt) =>
       // check document
       var doSync = false
       if (newDoc.getId.isDefined) {
@@ -264,19 +272,30 @@ trait Service {
         val oldDocOpt = getDocument(docId)
         if (oldDocOpt.isDefined) {
           val oldDoc = oldDocOpt.get
-          val docModified = newDoc.isModified(oldDoc, uploader)
-          val filesModified = doc.files.exists { case (filename, file) =>
-            uploader.exists(_.isModified(filename, file))
-          }
-          if (docModified || filesModified) {
-            // modified
-            println(s"! $target")
-            doSync = true
+          val differ = newDoc.isModified(oldDoc, uploader) ||
+            doc.files.exists { case (filename, file) =>
+              uploader.exists(_.isModified(filename, file))
+            }
+          val driftDetected = expectDigestOpt.isDefined &&
+            !expectDigestOpt.contains(oldDoc.getDigest())
+          if (differ) {
+            if (driftDetected) {
+              println(s"x $target: modified externally")
+            } else {
+              println(s"! $target")
+              doSync = true
+            }
             if (verbose) {
               newDoc.isModified(oldDoc, uploader, printDiff = true)
             }
-          } else {
-            println(s"  $target: not modified")
+          } else { // not differ
+            if (driftDetected) {
+              println(s"  $target: not modified but digest mismatch.")
+              println(s"  -${expectDigestOpt.get}")
+              println(s"  +${oldDoc.getDigest()}")
+            } else {
+              println(s"  $target: not modified")
+            }
           }
         } else {
           println(s"? $target: ($docId) not exists.")
@@ -427,11 +446,12 @@ case class QiitaUser(id: String, items_count: Int)
 case class QiitaItemMeta
 (
   id: Option[String] = None,
+  url: Option[String] = None,
   created_at: Option[String] = None,
   updated_at: Option[String] = None,
+  digest: Option[String] = None,
   tags: Seq[QiitaItemTag] = Seq(),
   `private`: Boolean = true,
-  url: Option[String] = None,
   upload: Option[UploadMeta] = None
 )
 
@@ -444,17 +464,27 @@ case class QiitaItemTag
 case class QiitaItem
 (
   id: Option[String],
+  url: Option[String],
   created_at: Option[String],
   updated_at: Option[String],
   tags: Seq[QiitaItemTag],
   `private`: Boolean,
-  url: Option[String],
   body: String,
   title: String
 ) extends ServiceDocument {
   override def getId: Option[String] = id
 
   override def getUrl: Option[String] = url
+
+  override def getDigest(uploader: Option[Uploader] = None): String = {
+    val fileMap = uploader.map(_.getFileMap).getOrElse(Map[String, String]())
+    val digest = MessageDigest.getInstance("SHA-1")
+    digest.update(tags.mkString(",").getBytes)
+    digest.update(`private`.toString.getBytes)
+    digest.update(getTitle.getBytes)
+    digest.update(getBody(fileMap).getBytes)
+    Hex.encodeHexString(digest.digest)
+  }
 
   override def getTitle: String = title
 
@@ -547,7 +577,7 @@ class QiitaService(username: String, accessToken: String) extends Service {
 
   override def getDocument(id: String): Option[ServiceDocument] = items.find(_.id.get == id)
 
-  override def toServiceDocument(doc: Document, uploader: Option[Uploader]): Option[QiitaItem] = {
+  override def toServiceDocument(doc: Document, uploader: Option[Uploader]): Option[(QiitaItem, Option[String])] = {
     val metaFile = new File(doc.dir, META_FILENAME)
 
     if (metaFile.exists()) {
@@ -555,16 +585,16 @@ class QiitaService(username: String, accessToken: String) extends Service {
       if (itemMeta.upload.isDefined && uploader.isDefined) {
         uploader.get.meta = itemMeta.upload.get // set upload meta data
       }
-      Some(QiitaItem(
+      Some((QiitaItem(
         id = itemMeta.id,
+        url = itemMeta.url,
         created_at = itemMeta.created_at,
         updated_at = itemMeta.updated_at,
         tags = itemMeta.tags,
         `private` = itemMeta.`private`,
-        url = itemMeta.url,
         body = doc.body,
         title = doc.title
-      ))
+      ), itemMeta.digest))
     } else None
   }
 
@@ -574,11 +604,12 @@ class QiitaService(username: String, accessToken: String) extends Service {
     // write qiita.yml
     Mapper.writeYaml(file, QiitaItemMeta(
       id = item.id,
+      url = item.url,
       created_at = item.created_at,
       updated_at = item.updated_at,
+      digest = Some(item.getDigest(uploader)),
       tags = item.tags,
       `private` = item.`private`,
-      url = item.url,
       upload = uploader.map(_.meta)
     ))
   }
@@ -663,30 +694,42 @@ case class EsaMembersResponse(members: Seq[EsaMember])
 case class EsaPostMeta
 (
   number: Option[Int] = None,
+  url: Option[String] = None,
   created_at: Option[String] = None,
   updated_at: Option[String] = None,
+  digest: Option[String] = None,
   category: Option[String] = None,
   tags: Seq[String] = Seq(),
   wip: Boolean = true,
-  url: Option[String] = None,
   upload: Option[UploadMeta] = None
 )
 
 case class EsaPost
 (
   number: Option[Int],
+  url: Option[String],
   created_at: Option[String],
   updated_at: Option[String],
   category: Option[String] = None,
   tags: Seq[String],
   wip: Boolean = true,
-  url: Option[String],
   body_md: String,
   name: String
 ) extends ServiceDocument {
   override def getId: Option[String] = number.map(_.toString)
 
   override def getUrl: Option[String] = url
+
+  override def getDigest(uploader: Option[Uploader] = None): String = {
+    val fileMap = uploader.map(_.getFileMap).getOrElse(Map[String, String]())
+    val digest = MessageDigest.getInstance("SHA-1")
+    digest.update(category.getOrElse("").getBytes)
+    digest.update(tags.mkString(",").getBytes)
+    digest.update(wip.toString.getBytes)
+    digest.update(getTitle.getBytes)
+    digest.update(getBody(fileMap).getBytes)
+    Hex.encodeHexString(digest.digest)
+  }
 
   override def getTitle: String = {
     name.replaceAll("/", "")
@@ -764,24 +807,24 @@ class EsaService(teamName: String, username: String, accessToken: String) extend
 
   override def getDocument(id: String): Option[ServiceDocument] = posts.find(_.number.get.toString == id)
 
-  override def toServiceDocument(doc: Document, uploader: Option[Uploader]): Option[EsaPost] = {
+  override def toServiceDocument(doc: Document, uploader: Option[Uploader]): Option[(EsaPost, Option[String])] = {
     val metaFile = new File(doc.dir, META_FILENAME)
     if (metaFile.exists()) {
       val postMeta = Option(Mapper.readYaml(metaFile, classOf[EsaPostMeta])).getOrElse(EsaPostMeta())
       if (postMeta.upload.isDefined && uploader.isDefined) {
         uploader.get.meta = postMeta.upload.get // set upload meta data
       }
-      Some(EsaPost(
+      Some((EsaPost(
         number = postMeta.number,
+        url = postMeta.url,
         created_at = postMeta.created_at,
         updated_at = postMeta.updated_at,
         category = postMeta.category,
         tags = postMeta.tags,
         wip = postMeta.wip,
-        url = postMeta.url,
-        body_md = doc.body,
-        name = doc.title
-      ))
+        name = doc.title,
+        body_md = doc.body
+      ), postMeta.digest))
     } else None
   }
 
@@ -791,12 +834,13 @@ class EsaService(teamName: String, username: String, accessToken: String) extend
     // write qiita.yml
     Mapper.writeYaml(file, EsaPostMeta(
       number = post.number,
+      url = post.url,
       created_at = post.created_at,
       updated_at = post.updated_at,
+      digest = Some(post.getDigest(uploader)),
       category = post.category,
       tags = post.tags,
       wip = post.wip,
-      url = post.url,
       upload = uploader.map(_.meta)
     ))
   }
