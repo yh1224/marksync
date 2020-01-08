@@ -6,14 +6,14 @@ import java.util.UUID
 
 import $ivy.`com.fasterxml.jackson.core:jackson-core:2.10.0.pr3`
 import $ivy.`com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.9.9`
-import $ivy.`com.fasterxml.jackson.module:jackson-module-scala_2.12:2.10.0.pr3`
+import $ivy.`com.fasterxml.jackson.module:jackson-module-scala_2.13:2.10.0.pr3`
 import $ivy.`commons-codec:commons-codec:1.13`
 import $ivy.`io.github.cdimascio:java-dotenv:5.1.2`
 import $ivy.`io.github.java-diff-utils:java-diff-utils:4.0`
 import $ivy.`net.sourceforge.plantuml:plantuml:6703`
 import $ivy.`org.slf4j:slf4j-log4j12:1.7.28`
 //import $ivy.`software.amazon.awssdk:bom:2.9.7`
-import $ivy.`com.softwaremill.sttp:core_2.12:1.6.8`
+import $ivy.`com.softwaremill.sttp:core_2.13:1.6.8`
 import $ivy.`software.amazon.awssdk:apache-client:2.9.7`
 import $ivy.`software.amazon.awssdk:aws-sdk-java:2.9.7`
 import com.fasterxml.jackson.annotation._
