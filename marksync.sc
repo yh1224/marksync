@@ -626,6 +626,7 @@ class QiitaService(username: String, accessToken: String) extends Service {
     val updateResponse = item.id match {
       case Some(itemId) =>
         // update
+        // FIXME: うまくいかなくなった
         requests.patch(s"$ENDPOINT/items/$itemId", data = data, auth = Bearer(accessToken), headers = HEADERS)
       case None =>
         // create
@@ -860,7 +861,8 @@ class EsaService(teamName: String, username: String, accessToken: String) extend
     val updateResponse = post.number match {
       case Some(postId) =>
         // update
-        requests.patch(s"$ENDPOINT/posts/$postId", data = data, auth = Bearer(accessToken), headers = HEADERS)
+        // FIXME: API 仕様は PATCH だが、unofficial のため PUT で代用 (これでもいけた)
+        requests.put(s"$ENDPOINT/posts/$postId", data = data, auth = Bearer(accessToken), headers = HEADERS)
       case None =>
         // create
         requests.post(s"$ENDPOINT/posts", data = data, auth = Bearer(accessToken), headers = HEADERS)
