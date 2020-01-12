@@ -702,7 +702,8 @@ case class EsaPostMeta
   category: Option[String] = None,
   tags: Seq[String] = Seq(),
   wip: Boolean = true,
-  upload: Option[UploadMeta] = None
+  upload: Option[UploadMeta] = None,
+  message: Option[String] = None
 )
 
 case class EsaPost
@@ -715,7 +716,8 @@ case class EsaPost
   tags: Seq[String],
   wip: Boolean = true,
   body_md: String,
-  name: String
+  name: String,
+  message: Option[String] = None
 ) extends ServiceDocument {
   override def getId: Option[String] = number.map(_.toString)
 
@@ -824,7 +826,8 @@ class EsaService(teamName: String, username: String, accessToken: String) extend
         tags = postMeta.tags,
         wip = postMeta.wip,
         name = doc.title,
-        body_md = doc.body
+        body_md = doc.body,
+        message = postMeta.message
       ), postMeta.digest))
     } else None
   }
@@ -855,7 +858,8 @@ class EsaService(teamName: String, username: String, accessToken: String) extend
         "category" -> post.category,
         "wip" -> post.wip,
         "tags" -> post.tags,
-        "name" -> post.getTitle
+        "name" -> post.getTitle,
+        "message" -> post.message
       )
     ))
     val updateResponse = post.number match {
