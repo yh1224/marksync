@@ -35,8 +35,8 @@ import software.amazon.awssdk.http.apache.ApacheHttpClient
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model._
 
-import scala.collection.JavaConverters._
 import scala.collection.mutable
+import scala.jdk.CollectionConverters._
 
 implicit val backend: SttpBackend[Id, Nothing] = OkHttpSyncBackend()
 
