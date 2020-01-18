@@ -8,6 +8,7 @@ import $ivy.`com.fasterxml.jackson.core:jackson-core:2.10.1`
 import $ivy.`com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.10.1`
 import $ivy.`com.fasterxml.jackson.module:jackson-module-scala_2.13:2.10.1`
 import $ivy.`com.softwaremill.sttp:core_2.13:1.7.2`
+import $ivy.`com.softwaremill.sttp:okhttp-backend_2.13:1.7.2`
 import $ivy.`commons-codec:commons-codec:1.13`
 import $ivy.`io.github.cdimascio:java-dotenv:5.1.3`
 import $ivy.`io.github.java-diff-utils:java-diff-utils:4.5`
@@ -24,6 +25,7 @@ import com.fasterxml.jackson.module.scala._
 import com.github.difflib.DiffUtils
 import com.github.difflib.patch.{ChangeDelta, DeleteDelta, InsertDelta}
 import com.softwaremill.sttp._
+import com.softwaremill.sttp.okhttp.OkHttpSyncBackend
 import io.github.cdimascio.dotenv.Dotenv
 import net.sourceforge.plantuml.code.TranscoderUtil
 import org.apache.commons.codec.binary.Hex
@@ -36,6 +38,7 @@ import software.amazon.awssdk.services.s3.model._
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
+implicit val backend: SttpBackend[Id, Nothing] = OkHttpSyncBackend()
 
 object Mapper {
   val jsonMapper = new ObjectMapper()
@@ -553,7 +556,7 @@ case class QiitaItem
  */
 class QiitaService(username: String, accessToken: String) extends Service {
   protected val ENDPOINT = "https://qiita.com/api/v2"
-  protected val HEADERS = Seq(
+  protected val HEADERS = Map(
     "Content-Type" -> "application/json"
   )
 
@@ -624,20 +627,22 @@ class QiitaService(username: String, accessToken: String) extends Service {
       "tags" -> item.tags,
       "title" -> item.getTitle
     ))
+    val updateRequest = sttp.auth.bearer(accessToken).headers(HEADERS).body(data)
     val updateResponse = item.id match {
       case Some(itemId) =>
         // update
-        // FIXME: うまくいかなくなった
-        requests.patch(s"$ENDPOINT/items/$itemId", data = data, auth = Bearer(accessToken), headers = HEADERS)
+        updateRequest.patch(Uri.parse(s"$ENDPOINT/items/$itemId").get).send()
       case None =>
         // create
-        requests.post(s"$ENDPOINT/items", data = data, auth = Bearer(accessToken), headers = HEADERS)
+        updateRequest.post(Uri.parse(s"$ENDPOINT/items").get).send()
     }
-    if (!updateResponse.is2xx) {
-      println(s"${updateResponse.statusMessage}: ${updateResponse.text}")
-      return None
+    updateResponse.body match {
+      case Left(errorMessage) =>
+        println(s"${updateResponse.statusText}: $errorMessage")
+        None
+      case Right(deserializedBody) =>
+        Some(Mapper.readJson(deserializedBody, classOf[QiitaItem]))
     }
-    Some(Mapper.readJson(updateResponse.text(), classOf[QiitaItem]))
   }
 }
 
@@ -655,8 +660,6 @@ case class UploadPolicies(attachment: UploadAttachment, form: Map[String, String
 
 class EsaUploader(teamName: String, username: String, accessToken: String) extends Uploader {
   protected val ENDPOINT = s"https://api.esa.io/v1/teams/$teamName"
-
-  implicit val backend: SttpBackend[Id, Nothing] = HttpURLConnectionBackend()
 
   override def upload(file: File): Option[String] = {
     val contentType = Option(Files.probeContentType(file.toPath)).getOrElse("application/octet-stream")
@@ -786,7 +789,7 @@ class EsaService(teamName: String, username: String, accessToken: String) extend
   protected val META_FILENAME_PREFIX = "esa-"
   protected val META_FILENAME_POSTFIX = ".yml"
   protected val ENDPOINT = s"https://api.esa.io/v1/teams/$teamName"
-  protected val HEADERS = Seq(
+  protected val HEADERS = Map(
     "Content-Type" -> "application/json"
   )
 
@@ -863,20 +866,22 @@ class EsaService(teamName: String, username: String, accessToken: String) extend
         "message" -> post.message
       )
     ))
+    val updateRequest = sttp.auth.bearer(accessToken).headers(HEADERS).body(data)
     val updateResponse = post.number match {
       case Some(postId) =>
         // update
-        // FIXME: API 仕様は PATCH だが、unofficial のため PUT で代用 (これでもいけた)
-        requests.put(s"$ENDPOINT/posts/$postId", data = data, auth = Bearer(accessToken), headers = HEADERS)
+        updateRequest.patch(Uri.parse(s"$ENDPOINT/posts/$postId").get).send()
       case None =>
         // create
-        requests.post(s"$ENDPOINT/posts", data = data, auth = Bearer(accessToken), headers = HEADERS)
+        updateRequest.post(Uri.parse(s"$ENDPOINT/posts").get).send()
     }
-    if (!updateResponse.is2xx) {
-      println(s"${updateResponse.statusMessage}: ${updateResponse.text}")
-      return None
+    updateResponse.body match {
+      case Left(errorMessage) =>
+        println(s"${updateResponse.statusText}: $errorMessage")
+        None
+      case Right(deserializedBody) =>
+        Some(Mapper.readJson(deserializedBody, classOf[EsaPost]))
     }
-    Some(Mapper.readJson(updateResponse.text(), classOf[EsaPost]))
   }
 }
 

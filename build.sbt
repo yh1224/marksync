@@ -10,6 +10,7 @@ lazy val root = (project in file(".")).
       "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % "2.10.1",
       "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.10.1",
       "com.softwaremill.sttp" %% "core" % "1.7.2",
+      "com.softwaremill.sttp" %% "okhttp-backend" % "1.7.2",
       "commons-codec" % "commons-codec" % "1.13",
       "io.github.cdimascio" % "java-dotenv" % "5.1.3",
       "io.github.java-diff-utils" % "java-diff-utils" % "4.5",
