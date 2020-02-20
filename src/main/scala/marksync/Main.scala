@@ -1,12 +1,17 @@
 package marksync
 
 import java.io.File
+import java.nio.file.Paths
 
 import io.github.cdimascio.dotenv.Dotenv
 import marksync.esa.{EsaService, EsaUploader}
 import marksync.qiita.{QiitaService, S3Uploader}
 
+import scala.collection.mutable.ListBuffer
+
 object Main extends App {
+  val CONFIG_DIR = ".marksync"
+  val ENV_PREFIX = ".env"
 
   case class Config
   (
@@ -56,20 +61,45 @@ object Main extends App {
       else success
     }
   }
-  parser.parse(args, Config()).map { config =>
-    val dotEnv = Dotenv.configure().filename(config.env).load()
-    config.subCommand match {
-      case "fetch" =>
-        fetchAll(config.output.get, getService(dotEnv))
-      case "check" =>
-        config.targets.foreach { target =>
-          updateAll(target, getService(dotEnv), getUploader(dotEnv), check = true, verbose = config.verbose)
+  parser.parse(args, Config()).foreach { config =>
+    val dotEnv = getDotEnv(config.env)
+    if (dotEnv.isEmpty) {
+      println("file not found: " + config.env)
+    } else {
+      dotEnv.foreach { dotEnv =>
+        config.subCommand match {
+          case "fetch" =>
+            fetchAll(config.output.get, getService(dotEnv))
+          case "check" =>
+            config.targets.foreach { target =>
+              updateAll(target, getService(dotEnv), getUploader(dotEnv), check = true, verbose = config.verbose)
+            }
+          case "update" =>
+            config.targets.foreach { target =>
+              updateAll(target, getService(dotEnv), getUploader(dotEnv), check = false, verbose = config.verbose)
+            }
         }
-      case "update" =>
-        config.targets.foreach { target =>
-          updateAll(target, getService(dotEnv), getUploader(dotEnv), check = false, verbose = config.verbose)
-        }
+      }
     }
+  }
+
+  /**
+   * Get dotenv.
+   *
+   * @param env Environment name
+   * @return Dotenv object
+   */
+  def getDotEnv(env: String): Option[Dotenv] = {
+    val envCandidates = ListBuffer[String]()
+    var path = Paths.get(".").toAbsolutePath
+    while (path != null) {
+      envCandidates += path.resolve(env).toString
+      envCandidates += path.resolve(ENV_PREFIX + "." + env).toString
+      path = path.getParent
+    }
+    envCandidates
+      .find(f => new File(f).exists)
+      .map(envFile => Dotenv.configure().directory("/").filename(envFile).load())
   }
 
   /**
