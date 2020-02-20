@@ -1,16 +1,19 @@
-// It uses to import dependencies to IntelliJ.
-lazy val root = (project in file(".")).
-  settings(
-    inThisBuild(List(
-      scalaVersion := "2.13.1"
-    )),
+name := "marksync"
+
+version := "0.1"
+
+scalaVersion := "2.13.1"
+
+lazy val marksync = (project in file("."))
+  .settings(
     libraryDependencies ++= Seq(
-      "com.lihaoyi" % "ammonite" % "2.0.4" cross CrossVersion.full,
       "com.fasterxml.jackson.core" % "jackson-core" % "2.10.1",
       "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % "2.10.1",
       "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.10.1",
+      "com.github.scopt" %% "scopt" % "3.7.1",
       "com.softwaremill.sttp" %% "core" % "1.7.2",
       "com.softwaremill.sttp" %% "okhttp-backend" % "1.7.2",
+      "com.lihaoyi" %% "requests" % "0.4.9",
       "commons-codec" % "commons-codec" % "1.13",
       "io.github.cdimascio" % "java-dotenv" % "5.1.3",
       "io.github.java-diff-utils" % "java-diff-utils" % "4.5",
@@ -21,3 +24,8 @@ lazy val root = (project in file(".")).
       "software.amazon.awssdk" % "aws-sdk-java" % "2.9.7"
     )
   )
+
+assemblyMergeStrategy in assembly := {
+  case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+  case x => MergeStrategy.first
+}

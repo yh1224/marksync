@@ -9,13 +9,7 @@ Supported services are:
 
 ## Prerequisite
 
-- [Ammonite](https://ammonite.io)
-
-    ex) on macOS
-
-    ```bash
-    $ brew install ammonite-repl
-    ```
+- [Scala SBT](https://www.scala-sbt.org/)
 
 ## How to use
 
@@ -23,7 +17,7 @@ Supported services are:
 
 Place .env file.
 
-```bash
+```shell
 $ cp .env.example.qiita .env
 ```
 
@@ -35,20 +29,20 @@ See [example](example) folder.
 
 ### Check modified
 
-```bash
-$ amm marksync.sc check <target-path>
+```shell
+$ marksync check <target>...
 ```
 
 ### Update
 
-```bash
-$ amm marksync.sc update <target-path>
+```shell
+$ marksync update <target>...
 ```
 
 ## Fetch all documents from service
 
 You can fetch documents from service.
 
-```bash
-$ amm marksync.sc fetch <output-path>
+```shell
+$ marksync fetch -o <output>
 ```
