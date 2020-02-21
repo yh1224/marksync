@@ -62,6 +62,12 @@ object Main extends App {
     }
   }
   parser.parse(args, Config()).foreach { config =>
+    config.targets.foreach { target =>
+      if (!target.exists()) {
+        println("not found: " + target)
+        sys.exit(-1)
+      }
+    }
     val dotEnv = getDotEnv(config.env)
     if (dotEnv.isEmpty) {
       println("file not found: " + config.env)
