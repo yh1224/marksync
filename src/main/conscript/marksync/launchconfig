@@ -1,0 +1,10 @@
+[app]
+  version: 0.1.0
+  org: com.github.yh1224
+  name: marksync
+  class: marksync.Main
+[scala]
+  version: 2.13.1
+[repositories]
+  local
+  maven-central

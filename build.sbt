@@ -1,10 +1,13 @@
+organization := "com.github.yh1224"
+
 name := "marksync"
 
-version := "0.1"
+version := "0.1.0"
 
 scalaVersion := "2.13.1"
 
 lazy val marksync = (project in file("."))
+  .enablePlugins(ConscriptPlugin)
   .settings(
     libraryDependencies ++= Seq(
       "com.fasterxml.jackson.core" % "jackson-core" % "2.10.1",

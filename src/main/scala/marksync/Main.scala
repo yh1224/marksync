@@ -9,9 +9,11 @@ import marksync.qiita.{QiitaService, S3Uploader}
 
 import scala.collection.mutable.ListBuffer
 
-object Main extends App {
+class Main extends xsbti.AppMain {
   val CONFIG_DIR = ".marksync"
   val ENV_PREFIX = ".env"
+
+  class Exit(val code: Int) extends xsbti.Exit
 
   case class Config
   (
@@ -22,71 +24,74 @@ object Main extends App {
     targets: Seq[File] = List(),
   )
 
-  val parser = new scopt.OptionParser[Config]("marksync") {
-    head("scopt", "3.7.1")
-    opt[String]('e', "env")
-      .action { (x, c) =>
-        c.copy(env = x)
-      } text ("environment")
-    opt[Unit]('v', "verbose")
-      .action { (_, c) =>
-        c.copy(verbose = true)
-      } text ("verbose")
-    help("help") text ("marksync")
-    cmd("fetch")
-      .action((_, c) => c.copy(subCommand = "fetch"))
-      .children(
-        opt[File]('o', "output")
-          .required()
-          .action { (x, c) =>
-            c.copy(output = Some(x))
-          } text ("output"),
-      )
-    cmd("check")
-      .action((_, c) => c.copy(subCommand = "check"))
-      .children(
-        arg[File]("<target>...")
-          .unbounded()
-          .action((x, c) => c.copy(targets = c.targets :+ x))
-      )
-    cmd("update")
-      .action((_, c) => c.copy(subCommand = "update"))
-      .children(
-        arg[File]("<target>...")
-          .unbounded()
-          .action((x, c) => c.copy(targets = c.targets :+ x))
-      )
-    checkConfig { c =>
-      if (c.subCommand.isEmpty) failure("subcommand required.")
-      else success
-    }
-  }
-  parser.parse(args, Config()).foreach { config =>
-    config.targets.foreach { target =>
-      if (!target.exists()) {
-        println("not found: " + target)
-        sys.exit(-1)
+  def run(configuration: xsbti.AppConfiguration): xsbti.MainResult = {
+    val parser = new scopt.OptionParser[Config]("marksync") {
+      head("scopt", "3.7.1")
+      opt[String]('e', "env")
+        .action { (x, c) =>
+          c.copy(env = x)
+        } text ("environment")
+      opt[Unit]('v', "verbose")
+        .action { (_, c) =>
+          c.copy(verbose = true)
+        } text ("verbose")
+      help("help") text ("marksync")
+      cmd("fetch")
+        .action((_, c) => c.copy(subCommand = "fetch"))
+        .children(
+          opt[File]('o', "output")
+            .required()
+            .action { (x, c) =>
+              c.copy(output = Some(x))
+            } text ("output"),
+        )
+      cmd("check")
+        .action((_, c) => c.copy(subCommand = "check"))
+        .children(
+          arg[File]("<target>...")
+            .unbounded()
+            .action((x, c) => c.copy(targets = c.targets :+ x))
+        )
+      cmd("update")
+        .action((_, c) => c.copy(subCommand = "update"))
+        .children(
+          arg[File]("<target>...")
+            .unbounded()
+            .action((x, c) => c.copy(targets = c.targets :+ x))
+        )
+      checkConfig { c =>
+        if (c.subCommand.isEmpty) failure("subcommand required.")
+        else success
       }
     }
-    val dotEnv = getDotEnv(config.env)
-    if (dotEnv.isEmpty) {
-      println("file not found: " + config.env)
-    } else {
-      dotEnv.foreach { dotEnv =>
-        config.subCommand match {
-          case "fetch" =>
-            fetchAll(config.output.get, getService(dotEnv))
-          case "check" =>
-            config.targets.foreach { target =>
-              updateAll(target, getService(dotEnv), getUploader(dotEnv), check = true, verbose = config.verbose)
-            }
-          case "update" =>
-            config.targets.foreach { target =>
-              updateAll(target, getService(dotEnv), getUploader(dotEnv), check = false, verbose = config.verbose)
-            }
+    parser.parse(configuration.arguments(), Config()).foreach { config =>
+      config.targets.foreach { target =>
+        if (!target.exists()) {
+          println("not found: " + target)
+          sys.exit(-1)
+        }
+      }
+      val dotEnv = getDotEnv(config.env)
+      if (dotEnv.isEmpty) {
+        println("file not found: " + config.env)
+      } else {
+        dotEnv.foreach { dotEnv =>
+          config.subCommand match {
+            case "fetch" =>
+              fetchAll(config.output.get, getService(dotEnv))
+            case "check" =>
+              config.targets.foreach { target =>
+                updateAll(target, getService(dotEnv), getUploader(dotEnv), check = true, verbose = config.verbose)
+              }
+            case "update" =>
+              config.targets.foreach { target =>
+                updateAll(target, getService(dotEnv), getUploader(dotEnv), check = false, verbose = config.verbose)
+              }
+          }
         }
       }
     }
+    new Exit(0)
   }
 
   /**
