@@ -14,7 +14,7 @@ object Mapper {
 
   val yamlMapper = new ObjectMapper(new YAMLFactory())
   yamlMapper.registerModule(DefaultScalaModule)
-  jsonMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+  yamlMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
   def readJson[A](str: String, aClass: Class[A]): A = jsonMapper.readValue(str, aClass)
 
