@@ -1,0 +1,5 @@
+.*
+!.gitignore
+!.marksync.example.*
+/build
+/test
