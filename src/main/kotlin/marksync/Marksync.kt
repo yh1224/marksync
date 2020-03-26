@@ -51,6 +51,9 @@ class Marksync {
                     "fetch" -> {
                         fetchAll(output!!, getService(dotenv)!!)
                     }
+                    "new" -> targets.forEach { target ->
+                        createDocument(target, getService(dotenv)!!)
+                    }
                     "check", "status" -> targets.forEach { target ->
                         updateAll(target, getService(dotenv)!!, checkOnly = true)
                     }
@@ -137,10 +140,14 @@ class Marksync {
      */
     private fun updateAll(fromDir: File, service: Service, checkOnly: Boolean, showDiff: Boolean = false) {
         listFiles(fromDir)
-            .filter { it.name == "index.md" }
+            .filter { it.name == DOCUMENT_FILENAME }
             .forEach {
                 service.sync(it.parentFile, checkOnly, showDiff)
             }
+    }
+
+    private fun createDocument(target: File, service: Service) {
+        service.createMeta(target)
     }
 
     /**
@@ -199,5 +206,6 @@ class Marksync {
     companion object {
         const val ENV_PREFIX = ".marksync"
         const val ENV_DEFAULT = "default"
+        const val DOCUMENT_FILENAME = "index.md"
     }
 }

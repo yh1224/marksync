@@ -36,6 +36,13 @@ abstract class Service(
     abstract fun toServiceDocument(doc: Document, dir: File): Pair<ServiceDocument, String?>?
 
     /**
+     * Create meta data for service.
+     *
+     * @param dir Document directory
+     */
+    abstract fun createMeta(dir: File)
+
+    /**
      * Save meta data to file.
      *
      * @param doc Document

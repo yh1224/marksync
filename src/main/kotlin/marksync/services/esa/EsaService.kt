@@ -58,11 +58,23 @@ class EsaService(
         } else null
     }
 
+    override fun createMeta(dir: File) {
+        val metaFile = File(dir, metaFilename)
+        if (metaFile.exists()) {
+            println("${metaFile.name} already exists.")
+            return
+        }
+
+        // create new marksync.yml
+        Mapper.writeYaml(metaFile, EsaPostMeta())
+        println("${metaFile.name} created.")
+    }
+
     override fun saveMeta(doc: ServiceDocument, dir: File, files: ArrayList<FileInfo>) {
         val post = doc as EsaPost
         val metaFile = File(dir, metaFilename)
 
-        // write qiita.yml
+        // update marksync.yml
         Mapper.writeYaml(
             metaFile, EsaPostMeta(
                 number = post.number,
