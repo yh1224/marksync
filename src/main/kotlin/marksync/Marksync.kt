@@ -51,7 +51,7 @@ class Marksync {
                     "fetch" -> {
                         fetchAll(output!!, getService(dotenv)!!)
                     }
-                    "check" -> targets.forEach { target ->
+                    "check", "status" -> targets.forEach { target ->
                         updateAll(target, getService(dotenv)!!, checkOnly = true)
                     }
                     "diff" -> targets.forEach { target ->
