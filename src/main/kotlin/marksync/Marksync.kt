@@ -1,7 +1,9 @@
 package marksync
 
-import com.xenomachina.argparser.*
-import io.github.cdimascio.dotenv.DotEnvException
+import com.xenomachina.argparser.ArgParser
+import com.xenomachina.argparser.SystemExitException
+import com.xenomachina.argparser.default
+import com.xenomachina.argparser.mainBody
 import io.github.cdimascio.dotenv.Dotenv
 import io.github.cdimascio.dotenv.dotenv
 import marksync.services.Service
@@ -16,21 +18,30 @@ import java.nio.file.Path
 import java.nio.file.Paths
 
 class Marksync {
-    class MarksyncArgs(parser: ArgParser) {
-        val subCommand: String by parser
-            .positional("SUBCOMMAND", help = "Subcommand")
+    /**
+     * Common arguments parser
+     */
+    open class CommonArgs(parser: ArgParser) {
+        val command: String by parser
+            .positional("COMMAND", help = "Command")
         val env: String? by parser
             .storing("-e", "--env", help = "Environment")
             .default { null }
+    }
+
+    /**
+     * arguments parser for fetch sub-command
+     */
+    class FetchArgs(parser: ArgParser) : CommonArgs(parser) {
         val output: File? by parser
             .storing("-o", "--output", help = "Output directory")
             { File(this) }
-            .default { null }
-            .addValidator {
-                if (subCommand == "fetch" && value == null) {
-                    throw InvalidArgumentException("missing output directory option.")
-                }
-            }
+    }
+
+    /**
+     * arguments parser for status/diff/update sub-command
+     */
+    class UpdateArgs(parser: ArgParser) : CommonArgs(parser) {
         val targets: List<File> by parser
             .positionalList("TARGETS", help = "Targets")
             { File(this) }
@@ -38,38 +49,57 @@ class Marksync {
     }
 
     fun run(args: Array<String>) = mainBody {
-        ArgParser(args).parseInto(::MarksyncArgs).run {
+        val cmd = args[0]
+        val parser = when (cmd) {
+            "new", "help" -> ::CommonArgs
+            "fetch" -> ::FetchArgs
+            "check", "status", "diff", "update" -> ::UpdateArgs
+            else -> ::CommonArgs
+        }
+        ArgParser(args).parseInto(parser).run {
+            val dotenv = getDotenv(env) ?: throw SystemExitException("fatal: no marksync environment.", -1)
+            when (cmd) {
+                "fetch" -> runFetch(dotenv, args)
+                "new" -> runNew(dotenv, args)
+                "check", "status" -> runUpdate(dotenv, args, checkOnly = true)
+                "diff" -> runUpdate(dotenv, args, checkOnly = true, showDiff = true)
+                "update" -> runUpdate(dotenv, args, checkOnly = false)
+                else -> throw SystemExitException("invalid command: $cmd", -1)
+            }
+        }
+    }
+
+    /**
+     * run new sub-command
+     */
+    private fun runNew(dotenv: Dotenv, args: Array<String>) =
+        ArgParser(args).parseInto(::CommonArgs).run {
+            createDocument(File("."), getService(dotenv)!!)
+        }
+
+    /**
+     * run fetch sub-command
+     */
+    private fun runFetch(dotenv: Dotenv, args: Array<String>) =
+        ArgParser(args).parseInto(::FetchArgs).run {
+            fetchAll(output!!, getService(dotenv)!!)
+        }
+
+    /**
+     * run status/diff/update sub-command
+     */
+    private fun runUpdate(dotenv: Dotenv, args: Array<String>, checkOnly: Boolean, showDiff: Boolean = false) =
+        ArgParser(args).parseInto(::UpdateArgs).run {
             // check targets
             targets.forEach { target ->
                 if (!target.exists()) {
                     throw SystemExitException("target not found: $target", -1)
                 }
             }
-            try {
-                val dotenv = getDotenv(env)
-                when (subCommand) {
-                    "fetch" -> {
-                        fetchAll(output!!, getService(dotenv)!!)
-                    }
-                    "new" -> targets.forEach { target ->
-                        createDocument(target, getService(dotenv)!!)
-                    }
-                    "check", "status" -> targets.forEach { target ->
-                        updateAll(target, getService(dotenv)!!, checkOnly = true)
-                    }
-                    "diff" -> targets.forEach { target ->
-                        updateAll(target, getService(dotenv)!!, checkOnly = true, showDiff = true)
-                    }
-                    "update" -> targets.forEach { target ->
-                        updateAll(target, getService(dotenv)!!, checkOnly = false)
-                    }
-                    else -> throw SystemExitException("invalid SUBCOMMAND: $subCommand", -1)
-                }
-            } catch (e: DotEnvException) {
-                throw SystemExitException("Could not find environment: $env.", -1)
+            targets.forEach { target ->
+                updateAll(target, getService(dotenv)!!, checkOnly = checkOnly, showDiff = showDiff)
             }
         }
-    }
 
     /**
      * Get Environment.
@@ -77,7 +107,7 @@ class Marksync {
      * @param envName Environment name
      * @return Dotenv object
      */
-    private fun getDotenv(envName: String?): Dotenv {
+    private fun getDotenv(envName: String?): Dotenv? {
         val envCandidates = mutableListOf<File>()
         var path: Path? = Paths.get(".").toAbsolutePath()
         while (path != null) {
@@ -90,15 +120,11 @@ class Marksync {
             }
             path = path.parent
         }
+        val env = envCandidates.find { it.exists() && it.isFile } ?: return null
         return dotenv {
             filename = ENV_PREFIX
-            envCandidates.find { it.exists() && it.isFile }?.let { file ->
-                directory = "/"
-                filename = file.absolutePath
-            }
-            if (envName == null) {
-                ignoreIfMissing = true
-            }
+            directory = "/"
+            filename = env.absolutePath
         }
     }
 
