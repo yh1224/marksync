@@ -1,0 +1,29 @@
+{
+  "name": "marksync",
+  "version": "SNAPSHOT",
+  "description": "Synchronize Markdown documents to services.",
+  "license": "MIT",
+  "author": "Yoshiharu Hirose <yh1224@gmail.com>",
+  "files": [
+    "jdeploy-bundle"
+  ],
+  "main": "index.js",
+  "bin": {
+    "marksync": "jdeploy-bundle/jdeploy.js"
+  },
+  "repository": "github:yh1224/marksync",
+  "scripts": {
+    "build": "./gradlew fatJar",
+    "test": "./gradlew test",
+    "publish": "jdeploy publish"
+  },
+  "dependencies": {
+    "shelljs": "^0.7.5"
+  },
+  "devDependencies": {
+    "jdeploy": "^1.0.21"
+  },
+  "jdeploy": {
+    "jar": "build/libs/marksync-SNAPSHOT.jar"
+  }
+}
