@@ -120,6 +120,10 @@ class Marksync {
      * @param service Service object
      */
     private fun fetchAll(outDir: File, service: Service) {
+        if (outDir.exists()) {
+            println("$outDir already exists.")
+            return
+        }
         service.getDocuments().forEach { (docId: String, doc: ServiceDocument) ->
             println("$docId ${doc.getDocumentUrl()}")
             val dir = File(outDir, docId)
@@ -147,6 +151,10 @@ class Marksync {
     }
 
     private fun createDocument(target: File, service: Service) {
+        if (!File(target, DOCUMENT_FILENAME).exists()) {
+            println("$DOCUMENT_FILENAME not found.")
+            return
+        }
         service.createMeta(target)
     }
 
