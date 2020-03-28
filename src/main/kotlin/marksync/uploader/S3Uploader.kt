@@ -27,7 +27,7 @@ class S3Uploader
             .httpClientBuilder(ApacheHttpClient.builder())
         if (dotenv["AWS_PROFILE"] != null) {
             clientBuilder.credentialsProvider(ProfileCredentialsProvider.create(dotenv["AWS_PROFILE"]))
-        } else {
+        } else if (dotenv["AWS_ACCESS_KEY_ID"] != null && dotenv["AWS_SECRET_ACCESS_KEY"] != null) {
             clientBuilder.credentialsProvider(object : SystemSettingsCredentialsProvider() {
                 override fun loadSetting(setting: SystemSetting): Optional<String> {
                     return Optional.ofNullable(dotenv[setting.environmentVariable()])
