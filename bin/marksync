@@ -12,7 +12,4 @@ if [ -n "${BUILD}" -o ! -e ${MARKSYNC_BIN} ];then
 fi
 
 ARGS=$@
-if [ $# -eq 0 ]; then
-  ARGS="--help"
-fi
 ${MARKSYNC_BIN} ${ARGS}

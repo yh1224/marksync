@@ -49,7 +49,7 @@ class Marksync {
     }
 
     fun run(args: Array<String>) = mainBody {
-        val cmd = args[0]
+        val cmd = args.firstOrNull()
         val parser = when (cmd) {
             "new", "help" -> ::CommonArgs
             "fetch" -> ::FetchArgs
