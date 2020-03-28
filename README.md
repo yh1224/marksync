@@ -5,38 +5,53 @@ Synchronize Markdown documents to services.
 Supported services are:
 
 - [Qiita](https://qiita.com)
-- [esa](https://esa.io)
+- [esa.io](https://esa.io)
 
-## How to use
+## How to install
+
+```bash
+$ npm install -g marksync
+```
 
 ### Setup
 
-Place .marksync configuration file.
+Create environment configuration file. (.marksync)
 
 ```shell
 $ cp .marksync.example.qiita .marksync
 ```
 
-### Write document
+## How to use
 
-Place index.md and meta data (marksync.qiita.yml or marksync.esa-{teamName}.yml) into one folder. See [examples](examples) folder.
-
-### Check modified
-
-```shell
-$ marksync check
-```
-
-### Update
-
-```shell
-$ marksync update
-```
-
-## Fetch all documents from service
+### Fetch all documents from service
 
 You can fetch all documents from service.
 
 ```shell
 $ marksync fetch -o <output>
+```
+### Write document
+
+Create directory and index.md inside it, and execute
+
+```bash
+$ marksync new
+```
+
+### Check modified
+
+```shell
+$ marksync status
+```
+
+### Check differ
+
+```shell
+$ marksync diff
+```
+
+### Synchronize document
+
+```shell
+$ marksync update
 ```
