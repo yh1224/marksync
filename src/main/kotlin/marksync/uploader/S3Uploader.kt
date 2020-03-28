@@ -43,7 +43,7 @@ class S3Uploader
             if (file.name.indexOf('.') >= 0) file.name.substring(file.name.lastIndexOf('.')) else ""
         val name = UUID.randomUUID().toString()
         val filePath = "$datePrefix/$name$ext"
-        val objectKey = if (prefix != null) "$prefix/$filePath" else filePath
+        val objectKey = if (prefix.isNullOrEmpty()) filePath else "$prefix/$filePath"
         return try {
             val request = PutObjectRequest.builder()
                 .bucket(bucketName).key(objectKey)
