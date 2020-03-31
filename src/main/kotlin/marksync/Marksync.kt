@@ -23,7 +23,11 @@ class Marksync {
      */
     open class CommonArgs(parser: ArgParser) {
         val command: String by parser
-            .positional("COMMAND", help = "Command")
+            .positional(
+                "COMMAND",
+                help = "Command (" + Command.values().filter { !it.deprecated }
+                    .joinToString(", ") { it.name.toLowerCase() } + ")"
+            )
         val env: String? by parser
             .storing("-e", "--env", help = "Environment")
             .default { null }
@@ -48,23 +52,35 @@ class Marksync {
             .default { listOf(File(".")) }
     }
 
+    /**
+     * Command definition
+     */
+    enum class Command(
+        val parser: (ArgParser) -> CommonArgs,
+        val deprecated: Boolean = false
+    ) {
+        FETCH(::FetchArgs),
+        NEW(::CommonArgs),
+        CHECK(::UpdateArgs, true),
+        STATUS(::UpdateArgs),
+        DIFF(::UpdateArgs),
+        UPDATE(::UpdateArgs)
+    }
+
     fun run(args: Array<String>) = mainBody {
-        val cmd = args.firstOrNull()
-        val parser = when (cmd) {
-            "new" -> ::CommonArgs
-            "fetch" -> ::FetchArgs
-            "check", "status", "diff", "update" -> ::UpdateArgs
-            else -> ::CommonArgs
+        val cmd = try {
+            args.firstOrNull()?.let { Command.valueOf(it.toUpperCase()) }
+        } catch (e: IllegalArgumentException) {
+            throw SystemExitException("invalid command: ${args.first()}", -1)
         }
-        ArgParser(args).parseInto(parser).run {
-            val dotenv = getDotenv(env) ?: throw SystemExitException("fatal: no marksync environment.", -1)
+        ArgParser(args).parseInto(cmd?.parser ?: ::CommonArgs).let { cmdArgs ->
+            val dotenv = getDotenv(cmdArgs.env) ?: throw SystemExitException("fatal: no marksync environment.", -1)
             when (cmd) {
-                "fetch" -> runFetch(dotenv, args)
-                "new" -> runNew(dotenv, args)
-                "check", "status" -> runUpdate(dotenv, args, checkOnly = true)
-                "diff" -> runUpdate(dotenv, args, checkOnly = true, showDiff = true)
-                "update" -> runUpdate(dotenv, args, checkOnly = false)
-                else -> throw SystemExitException("invalid command: $cmd", -1)
+                Command.FETCH -> runFetch(dotenv, cmdArgs as FetchArgs)
+                Command.NEW -> runNew(dotenv)
+                Command.CHECK, Command.STATUS -> runUpdate(dotenv, cmdArgs as UpdateArgs, checkOnly = true)
+                Command.DIFF -> runUpdate(dotenv, cmdArgs as UpdateArgs, checkOnly = true, showDiff = true)
+                Command.UPDATE -> runUpdate(dotenv, cmdArgs as UpdateArgs, checkOnly = false)
             }
         }
     }
@@ -72,34 +88,31 @@ class Marksync {
     /**
      * run new sub-command
      */
-    private fun runNew(dotenv: Dotenv, args: Array<String>) =
-        ArgParser(args).parseInto(::CommonArgs).run {
-            createDocument(File("."), getService(dotenv)!!)
-        }
+    private fun runNew(dotenv: Dotenv) {
+        createDocument(File("."), getService(dotenv)!!)
+    }
 
     /**
      * run fetch sub-command
      */
-    private fun runFetch(dotenv: Dotenv, args: Array<String>) =
-        ArgParser(args).parseInto(::FetchArgs).run {
-            fetchAll(output!!, getService(dotenv)!!)
-        }
+    private fun runFetch(dotenv: Dotenv, args: FetchArgs) {
+        fetchAll(args.output!!, getService(dotenv)!!)
+    }
 
     /**
      * run status/diff/update sub-command
      */
-    private fun runUpdate(dotenv: Dotenv, args: Array<String>, checkOnly: Boolean, showDiff: Boolean = false) =
-        ArgParser(args).parseInto(::UpdateArgs).run {
-            // check targets
-            targets.forEach { target ->
-                if (!target.exists()) {
-                    throw SystemExitException("target not found: $target", -1)
-                }
-            }
-            targets.forEach { target ->
-                updateAll(target, getService(dotenv)!!, checkOnly = checkOnly, showDiff = showDiff)
+    private fun runUpdate(dotenv: Dotenv, args: UpdateArgs, checkOnly: Boolean, showDiff: Boolean = false) {
+        // check targets
+        args.targets.forEach { target ->
+            if (!target.exists()) {
+                throw SystemExitException("target not found: $target", -1)
             }
         }
+        args.targets.forEach { target ->
+            updateAll(target, getService(dotenv)!!, checkOnly = checkOnly, showDiff = showDiff)
+        }
+    }
 
     /**
      * Get Environment.
