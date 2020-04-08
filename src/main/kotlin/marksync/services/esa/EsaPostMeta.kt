@@ -8,7 +8,7 @@ data class EsaPostMeta(
     val created_at: String? = null,
     val updated_at: String? = null,
     val digest: String? = null,
-    val category: String? = null,
+    val category: String = "",
     val tags: List<String> = listOf(),
     val wip: Boolean = true,
     val files: ArrayList<FileInfo> = arrayListOf(),

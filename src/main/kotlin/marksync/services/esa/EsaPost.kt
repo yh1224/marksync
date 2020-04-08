@@ -12,7 +12,7 @@ data class EsaPost(
     val url: String? = null,
     val created_at: String?,
     val updated_at: String?,
-    val category: String? = null,
+    val category: String = "",
     val tags: List<String>,
     val wip: Boolean = true,
     val body_md: String,
