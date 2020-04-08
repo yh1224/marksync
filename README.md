@@ -30,7 +30,7 @@ You can fetch all documents from service.
 ```shell
 $ marksync fetch -o <output>
 ```
-### Write document
+### Create new document
 
 Create directory and index.md inside it, and execute
 
@@ -50,7 +50,7 @@ $ marksync status
 $ marksync diff
 ```
 
-### Synchronize document
+### Synchronize document to service
 
 ```shell
 $ marksync update
