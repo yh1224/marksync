@@ -82,7 +82,7 @@ class EsaService(
                 created_at = post.created_at,
                 updated_at = post.updated_at,
                 digest = post.getDigest(),
-                category = post.category,
+                category = post.category ?: "",
                 tags = post.tags,
                 wip = post.wip,
                 files = files
