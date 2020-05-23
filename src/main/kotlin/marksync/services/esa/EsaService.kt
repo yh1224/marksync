@@ -25,15 +25,17 @@ class EsaService(
     private val metaFilename = "$META_FILENAME_PREFIX$teamName$META_FILENAME_POSTFIX"
     private val apiClient = EsaApiClient(teamName, accessToken)
 
-    private val posts: List<EsaPost> by lazy {
-        apiClient.getPosts(username)
+    private var posts: List<EsaPost>? = null
+
+    override fun getDocuments(): Map<String, EsaPost> {
+        if (posts == null) {
+            posts = apiClient.getPosts(username)
+        }
+        return posts!!.map { post -> post.number!!.toString() to post }.toMap()
     }
 
-    override fun getDocuments(): Map<String, EsaPost> =
-        posts.map { post -> post.number!!.toString() to post }.toMap()
-
     override fun getDocument(id: String): ServiceDocument? =
-        posts.find { it.number?.toString() == id }
+        posts?.find { it.number == id.toInt() } ?: apiClient.getPost(username, id.toInt())
 
     override fun toServiceDocument(doc: Document, dir: File): Pair<EsaPost, String?>? {
         val metaFile = File(dir, metaFilename)

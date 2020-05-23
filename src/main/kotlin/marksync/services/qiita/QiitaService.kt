@@ -16,22 +16,24 @@ import java.io.File
  * @param uploader Uploader
  */
 class QiitaService(
-    username: String,
+    val username: String,
     accessToken: String,
     uploader: Uploader? = null
 ) : Service(uploader) {
     private val metaFilename = META_FILENAME
     private val apiClient = QiitaApiClient(accessToken)
 
-    private val items: List<QiitaItem> by lazy {
-        apiClient.getItems(username)
+    private var items: List<QiitaItem>? = null
+
+    override fun getDocuments(): Map<String, QiitaItem> {
+        if (items == null) {
+            items = apiClient.getItems(username)
+        }
+        return items!!.map { it.id!! to it }.toMap()
     }
 
-    override fun getDocuments(): Map<String, QiitaItem> =
-        items.map { it.id!! to it }.toMap()
-
     override fun getDocument(id: String): ServiceDocument? =
-        items.find { it.id == id }
+        items?.find { it.id == id } ?: apiClient.getItem(id)
 
     override fun toServiceDocument(doc: Document, dir: File): Pair<QiitaItem, String?>? {
         val metaFile = File(dir, metaFilename)

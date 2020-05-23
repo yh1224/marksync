@@ -67,6 +67,23 @@ class QiitaApiClient(
     }
 
     /**
+     * Get item.
+     */
+    fun getItem(id: String): QiitaItem? {
+        val request = Request.Builder()
+            .url("$endpoint/items/$id")
+            .headers(headers)
+            .get()
+            .build()
+        val response = httpClient.newCall(request).execute()
+        if (!response.isSuccessful) {
+            println("${response.message}: ${response.body!!.string()}")
+            return null
+        }
+        return Mapper.readJson(response.body!!.string(), QiitaItem::class.java)
+    }
+
+    /**
      * Create item.
      */
     fun createItem(data: String): QiitaItem? {

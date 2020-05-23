@@ -56,7 +56,7 @@ class EsaApiClient(
     private fun getMember(username: String): EsaMember? =
         getMembers().find { it.screen_name == username }
 
-    data class EsaPostResponse(
+    data class EsaPostsResponse(
         val posts: List<EsaPost>
     )
 
@@ -83,7 +83,24 @@ class EsaApiClient(
             println("${response.message}: ${response.body!!.string()}")
             return listOf()
         }
-        return Mapper.readJson(response.body!!.string(), EsaPostResponse::class.java).posts
+        return Mapper.readJson(response.body!!.string(), EsaPostsResponse::class.java).posts
+    }
+
+    /**
+     * Get post.
+     */
+    fun getPost(username: String, number: Int): EsaPost? {
+        val request = Request.Builder()
+            .url("$endpoint/posts/$number")
+            .headers(headers)
+            .get()
+            .build()
+        val response = httpClient.newCall(request).execute()
+        if (!response.isSuccessful) {
+            println("${response.message}: ${response.body!!.string()}")
+            return null
+        }
+        return Mapper.readJson(response.body!!.string(), EsaPost::class.java)
     }
 
     /**
