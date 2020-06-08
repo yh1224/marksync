@@ -66,7 +66,7 @@ abstract class ServiceDocument {
     /**
      * Save body data to file.
      *
-     * @param file Target fileiff(
+     * @param file Target file
      */
     abstract fun saveBody(file: File)
 
