@@ -5,6 +5,7 @@ import com.github.difflib.UnifiedDiffUtils
 import marksync.Mapper
 import marksync.uploader.FileInfo
 import java.io.File
+import java.net.URLEncoder
 
 /**
  * Service specific document class.
@@ -55,8 +56,9 @@ abstract class ServiceDocument {
     fun convertFiles(body: String): String {
         var result = body
         files.forEach { fileInfo ->
+            val filename = fileInfo.filename.replace(" ", "%20")
             result = result.replace(
-                "\\[(.*)\\]\\(\\Q${fileInfo.filename}\\E\\)".toRegex(),
+                "\\[(.*)\\]\\(\\Q${filename}\\E\\)".toRegex(),
                 "[$1](${fileInfo.url})"
             )
         }

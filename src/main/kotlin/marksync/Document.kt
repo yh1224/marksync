@@ -1,6 +1,7 @@
 package marksync
 
 import java.io.File
+import java.net.URLDecoder
 import java.nio.file.Files
 
 /**
@@ -33,7 +34,7 @@ data class Document(
             body.split("(?<=\n)".toRegex()).forEach { line ->
                 if (title != null) {
                     "\\[.*\\]\\(([^)]+)\\)".toRegex().findAll(line).forEach { m ->
-                        val filename = m.groups[1]?.value!!
+                        val filename = m.groups[1]?.value!!.replace("%20", " ")
                         val file = File(dir, filename)
                         if (file.exists()) {
                             files[filename] = file
