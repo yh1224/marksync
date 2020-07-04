@@ -46,6 +46,8 @@ class Marksync {
      * arguments parser for status/diff/update sub-command
      */
     class UpdateArgs(parser: ArgParser) : CommonArgs(parser) {
+        val recursive: Boolean by parser
+            .flagging("-r", "--recursive", help = "Process recursively")
         val targets: List<File> by parser
             .positionalList("TARGETS", help = "Targets")
             { File(this) }
@@ -110,7 +112,13 @@ class Marksync {
             }
         }
         args.targets.forEach { target ->
-            updateAll(target, getService(dotenv)!!, checkOnly = checkOnly, showDiff = showDiff)
+            updateAll(
+                target,
+                getService(dotenv)!!,
+                recursive = args.recursive,
+                checkOnly = checkOnly,
+                showDiff = showDiff
+            )
         }
     }
 
@@ -145,11 +153,13 @@ class Marksync {
      * List all files recursively under the directory.
      *
      * @param dir Directory
+     * @param recursive Scan files recursively
      * @return Files
      */
-    private fun listFiles(dir: File): List<File> {
+    private fun listFiles(dir: File, recursive: Boolean = true): List<File> {
         val these = dir.listFiles()!!.toList()
-        return these + these.filter { it.isDirectory }.flatMap { listFiles(it) }
+        return if (!recursive) these else
+            these + these.filter { it.isDirectory }.flatMap { listFiles(it) }
     }
 
     /**
@@ -178,11 +188,21 @@ class Marksync {
      *
      * @param fromDir Input directory path
      * @param service Service object
+     * @param recursive Process recursively
      * @param checkOnly Set true to check only
      * @param showDiff Show diff
      */
-    private fun updateAll(fromDir: File, service: Service, checkOnly: Boolean, showDiff: Boolean = false) {
-        listFiles(fromDir)
+    private fun updateAll(
+        fromDir: File,
+        service: Service,
+        recursive: Boolean,
+        checkOnly: Boolean,
+        showDiff: Boolean = false
+    ) {
+        if (!recursive) {
+            println("warning: this process is no longer recursive by default. consider to use -r option.")
+        }
+        listFiles(fromDir, recursive)
             .filter { it.name == DOCUMENT_FILENAME }
             .forEach {
                 service.sync(it.parentFile, checkOnly, showDiff)
