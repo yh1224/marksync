@@ -34,9 +34,9 @@ class Marksync {
     }
 
     /**
-     * arguments parser for fetch sub-command
+     * arguments parser for import sub-command
      */
-    class FetchArgs(parser: ArgParser) : CommonArgs(parser) {
+    class ImportArgs(parser: ArgParser) : CommonArgs(parser) {
         val output: File? by parser
             .storing("-o", "--output", help = "Output directory")
             { File(this) }
@@ -61,7 +61,8 @@ class Marksync {
         val parser: (ArgParser) -> CommonArgs,
         val deprecated: Boolean = false
     ) {
-        FETCH(::FetchArgs),
+        FETCH(::ImportArgs, true),
+        IMPORT(::ImportArgs),
         NEW(::CommonArgs),
         CHECK(::UpdateArgs, true),
         STATUS(::UpdateArgs),
@@ -78,7 +79,7 @@ class Marksync {
         ArgParser(args).parseInto(cmd?.parser ?: ::CommonArgs).let { cmdArgs ->
             val dotenv = getDotenv(cmdArgs.env) ?: throw SystemExitException("fatal: no marksync environment.", -1)
             when (cmd) {
-                Command.FETCH -> runFetch(dotenv, cmdArgs as FetchArgs)
+                Command.IMPORT, Command.FETCH -> runImport(dotenv, cmdArgs as ImportArgs)
                 Command.NEW -> runNew(dotenv)
                 Command.CHECK, Command.STATUS -> runUpdate(dotenv, cmdArgs as UpdateArgs, checkOnly = true)
                 Command.DIFF -> runUpdate(dotenv, cmdArgs as UpdateArgs, checkOnly = true, showDiff = true)
@@ -95,10 +96,10 @@ class Marksync {
     }
 
     /**
-     * run fetch sub-command
+     * run import sub-command
      */
-    private fun runFetch(dotenv: Dotenv, args: FetchArgs) {
-        fetchAll(args.output!!, getService(dotenv)!!)
+    private fun runImport(dotenv: Dotenv, args: ImportArgs) {
+        importAll(args.output!!, getService(dotenv)!!)
     }
 
     /**
@@ -163,12 +164,12 @@ class Marksync {
     }
 
     /**
-     * Fetch all documents from service.
+     * Import all documents from service.
      *
      * @param outDir Output directory
      * @param service Service object
      */
-    private fun fetchAll(outDir: File, service: Service) {
+    private fun importAll(outDir: File, service: Service) {
         if (outDir.exists()) {
             println("$outDir already exists.")
             return
