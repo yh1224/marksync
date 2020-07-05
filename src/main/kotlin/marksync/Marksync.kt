@@ -200,14 +200,14 @@ class Marksync {
         checkOnly: Boolean,
         showDiff: Boolean = false
     ) {
-        if (!recursive) {
+        val targets = listFiles(fromDir, recursive)
+            .filter { it.name == DOCUMENT_FILENAME }
+        if (targets.isEmpty() && !recursive) {
             println("warning: this process is no longer recursive by default. consider to use -r option.")
         }
-        listFiles(fromDir, recursive)
-            .filter { it.name == DOCUMENT_FILENAME }
-            .forEach {
-                service.sync(it.parentFile, checkOnly, showDiff)
-            }
+        targets.forEach {
+            service.sync(it.parentFile, checkOnly, showDiff)
+        }
     }
 
     private fun createDocument(target: File, service: Service) {
