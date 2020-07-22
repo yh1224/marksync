@@ -33,7 +33,7 @@ data class Document(
             val files = mutableMapOf<String, File>()
             body.split("(?<=\n)".toRegex()).forEach { line ->
                 if (title != null) {
-                    "\\[.*\\]\\(([^)]+)\\)".toRegex().findAll(line).forEach { m ->
+                    "\\[[^\\]]*\\]\\(([^)]+)\\)".toRegex().findAll(line).forEach { m ->
                         val filename = m.groups[1]?.value!!.replace("%20", " ")
                         val file = File(dir, filename)
                         if (file.exists()) {
