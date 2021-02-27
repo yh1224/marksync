@@ -11,6 +11,5 @@ data class EsaPostMeta(
     val category: String = "",
     val tags: List<String> = listOf(),
     val wip: Boolean = true,
-    val files: ArrayList<FileInfo> = arrayListOf(),
-    val message: String? = null
+    val files: ArrayList<FileInfo> = arrayListOf()
 )

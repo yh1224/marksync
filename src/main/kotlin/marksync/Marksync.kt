@@ -1,9 +1,5 @@
 package marksync
 
-import com.xenomachina.argparser.ArgParser
-import com.xenomachina.argparser.SystemExitException
-import com.xenomachina.argparser.default
-import com.xenomachina.argparser.mainBody
 import io.github.cdimascio.dotenv.Dotenv
 import io.github.cdimascio.dotenv.dotenv
 import marksync.services.Service
@@ -13,114 +9,168 @@ import marksync.services.esa.EsaUploader
 import marksync.services.qiita.QiitaService
 import marksync.uploader.S3Uploader
 import marksync.uploader.Uploader
+import picocli.CommandLine
+import picocli.CommandLine.*
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
+import kotlin.system.exitProcess
 
+@Command(
+    name = "marksync",
+    subcommands = [HelpCommand::class],
+    description = ["Marksync"]
+)
 class Marksync {
-    /**
-     * Common arguments parser
-     */
-    open class CommonArgs(parser: ArgParser) {
-        val command: String by parser
-            .positional(
-                "COMMAND",
-                help = "Command (" + Command.values().filter { !it.deprecated }
-                    .joinToString(", ") { it.name.toLowerCase() } + ")"
-            )
-        val env: String? by parser
-            .storing("-e", "--env", help = "Environment")
-            .default { null }
+    @Option(names = ["-e", "--env"], paramLabel = "<env>", description = ["Environment name"])
+    var envName: String? = null
+
+    @Command(name = "import", description = ["Import documents"])
+    @Suppress("unused")
+    fun import(
+        @Option(names = ["-o", "--output"], required = true, paramLabel = "<dir>", description = ["output directory"])
+        output: File
+    ): Int {
+        runImport(envName, output)
+        return 0
     }
 
-    /**
-     * arguments parser for import sub-command
-     */
-    class ImportArgs(parser: ArgParser) : CommonArgs(parser) {
-        val output: File? by parser
-            .storing("-o", "--output", help = "Output directory")
-            { File(this) }
+    @Command(name = "new", description = ["Create new document metafile"])
+    @Suppress("unused")
+    fun new(): Int = try {
+        runNew(envName)
+        0
+    } catch (e: MarksyncException) {
+        System.err.println(e.message)
+        e.code.num
     }
 
-    /**
-     * arguments parser for status/diff/update sub-command
-     */
-    class UpdateArgs(parser: ArgParser) : CommonArgs(parser) {
-        val recursive: Boolean by parser
-            .flagging("-r", "--recursive", help = "Process recursively")
-        val targets: List<File> by parser
-            .positionalList("TARGETS", help = "Targets")
-            { File(this) }
-            .default { listOf(File(".")) }
+    @Command(name = "status", description = ["Check document update status"])
+    @Suppress("unused")
+    fun status(
+        @Parameters(arity = "0..*", paramLabel = "<target>", description = ["Targets"])
+        targets: List<File>?,
+    ): Int = try {
+        runUpdate(envName, targets ?: listOf(File(".")), checkOnly = true)
+        0
+    } catch (e: MarksyncException) {
+        System.err.println(e.message)
+        e.code.num
     }
 
-    /**
-     * Command definition
-     */
-    enum class Command(
-        val parser: (ArgParser) -> CommonArgs,
-        val deprecated: Boolean = false
-    ) {
-        FETCH(::ImportArgs, true),
-        IMPORT(::ImportArgs),
-        NEW(::CommonArgs),
-        CHECK(::UpdateArgs, true),
-        STATUS(::UpdateArgs),
-        DIFF(::UpdateArgs),
-        UPDATE(::UpdateArgs)
+    @Command(name = "diff", description = ["Differ document update"])
+    @Suppress("unused")
+    fun diff(
+        @Parameters(arity = "0..*", paramLabel = "<target>", description = ["Targets"])
+        targets: List<File>?,
+    ): Int = try {
+        runUpdate(envName, targets ?: listOf(File(".")), checkOnly = true, showDiff = true)
+        0
+    } catch (e: MarksyncException) {
+        System.err.println(e.message)
+        e.code.num
     }
 
-    fun run(args: Array<String>) = mainBody {
-        val cmd = try {
-            args.firstOrNull()?.let { Command.valueOf(it.toUpperCase()) }
-        } catch (e: IllegalArgumentException) {
-            throw SystemExitException("invalid command: ${args.first()}", -1)
-        }
-        ArgParser(args).parseInto(cmd?.parser ?: ::CommonArgs).let { cmdArgs ->
-            val dotenv = getDotenv(cmdArgs.env) ?: throw SystemExitException("fatal: no marksync environment.", -1)
-            when (cmd) {
-                Command.IMPORT, Command.FETCH -> runImport(dotenv, cmdArgs as ImportArgs)
-                Command.NEW -> runNew(dotenv)
-                Command.CHECK, Command.STATUS -> runUpdate(dotenv, cmdArgs as UpdateArgs, checkOnly = true)
-                Command.DIFF -> runUpdate(dotenv, cmdArgs as UpdateArgs, checkOnly = true, showDiff = true)
-                Command.UPDATE -> runUpdate(dotenv, cmdArgs as UpdateArgs, checkOnly = false)
-            }
-        }
+    @Command(name = "update", description = ["Update document"])
+    @Suppress("unused")
+    fun update(
+        @Option(names = ["-r", "--recursive"], description = ["Process recursively"])
+        recursive: Boolean,
+
+        @Option(names = ["-f", "--force"], description = ["Force update"])
+        force: Boolean,
+
+        @Option(names = ["-m", "--message"], paramLabel = "<message>", description = ["Update message"])
+        message: String?,
+
+        @Parameters(arity = "0..*", paramLabel = "<target>", description = ["Targets"])
+        targets: List<File>?,
+    ): Int = try {
+        runUpdate(
+            envName, targets ?: listOf(File(".")),
+            recursive = recursive, force = force, message = message
+        )
+        0
+    } catch (e: MarksyncException) {
+        System.err.println(e.message)
+        e.code.num
     }
 
     /**
      * run new sub-command
      */
-    private fun runNew(dotenv: Dotenv) {
-        createDocument(File("."), getService(dotenv)!!)
+    private fun runNew(envName: String?) {
+        val dotenv = getDotenv(envName)
+            ?: throw MarksyncException("fatal: no marksync environment.", MarksyncException.ErrorCode.ENV)
+        val service = getService(dotenv)
+            ?: throw MarksyncException("fatal: invalid environment.", MarksyncException.ErrorCode.ENV)
+        createDocument(File("."), service)
     }
 
     /**
      * run import sub-command
      */
-    private fun runImport(dotenv: Dotenv, args: ImportArgs) {
-        importAll(args.output!!, getService(dotenv)!!)
+    private fun runImport(envName: String?, output: File) {
+        val dotenv = getDotenv(envName)
+            ?: throw MarksyncException("fatal: no marksync environment.", MarksyncException.ErrorCode.ENV)
+        val service = getService(dotenv)
+            ?: throw MarksyncException("fatal: invalid environment.", MarksyncException.ErrorCode.ENV)
+        importAll(output, service)
     }
 
     /**
      * run status/diff/update sub-command
      */
-    private fun runUpdate(dotenv: Dotenv, args: UpdateArgs, checkOnly: Boolean, showDiff: Boolean = false) {
+    private fun runUpdate(
+        envName: String?,
+        targets: List<File>,
+        recursive: Boolean = true,
+        force: Boolean = false,
+        message: String? = null,
+        checkOnly: Boolean = false,
+        showDiff: Boolean = false,
+    ) {
+        val dotenv = getDotenv(envName)
+            ?: throw MarksyncException("fatal: no marksync environment.", MarksyncException.ErrorCode.ENV)
+        val service = getService(dotenv)
+            ?: throw MarksyncException("fatal: invalid environment.", MarksyncException.ErrorCode.ENV)
+
         // check targets
-        args.targets.forEach { target ->
+        targets.forEach { target ->
             if (!target.exists()) {
-                throw SystemExitException("target not found: $target", -1)
+                throw MarksyncException("target not found: $target", MarksyncException.ErrorCode.TARGET)
             }
         }
-        args.targets.forEach { target ->
-            updateAll(
-                target,
-                getService(dotenv)!!,
-                recursive = args.recursive,
-                checkOnly = checkOnly,
-                showDiff = showDiff
-            )
+
+        // proceed targets
+        targets.forEach { target ->
+            listFiles(target, recursive)
+                .filter { it.name == DOCUMENT_FILENAME }
+                .forEach {
+                    service.sync(it.parentFile, force, message, checkOnly, showDiff)
+                }
         }
+    }
+
+    /**
+     * Find environment file.
+     *
+     * @param envName Environment name
+     * @return Environment file
+     */
+    private fun findEnv(envName: String?): File? {
+        val envCandidates = mutableListOf<File>()
+        var path: Path? = Paths.get(".").toAbsolutePath()
+        while (path != null) {
+            if (envName != null) {
+                envCandidates += path.resolve("$ENV_PREFIX/$envName").toFile()
+            } else {
+                envCandidates += path.resolve(ENV_PREFIX).toFile()
+                envCandidates += path.resolve("$ENV_PREFIX/$ENV_DEFAULT").toFile()
+            }
+            path = path.parent
+        }
+        return envCandidates.find { it.exists() && it.isFile }
     }
 
     /**
@@ -130,19 +180,7 @@ class Marksync {
      * @return Dotenv object
      */
     private fun getDotenv(envName: String?): Dotenv? {
-        val envCandidates = mutableListOf<File>()
-        var path: Path? = Paths.get(".").toAbsolutePath()
-        while (path != null) {
-            if (envName != null) {
-                envCandidates += path.resolve("$ENV_PREFIX.$envName").toFile()
-                envCandidates += path.resolve("$ENV_PREFIX/$envName").toFile()
-            } else {
-                envCandidates += path.resolve(ENV_PREFIX).toFile()
-                envCandidates += path.resolve("$ENV_PREFIX/$ENV_DEFAULT").toFile()
-            }
-            path = path.parent
-        }
-        val env = envCandidates.find { it.exists() && it.isFile } ?: return null
+        val env = findEnv(envName) ?: return null
         return dotenv {
             filename = ENV_PREFIX
             directory = "/"
@@ -184,32 +222,6 @@ class Marksync {
         }
     }
 
-    /**
-     * Check/Update all documents under the directory.
-     *
-     * @param fromDir Input directory path
-     * @param service Service object
-     * @param recursive Process recursively
-     * @param checkOnly Set true to check only
-     * @param showDiff Show diff
-     */
-    private fun updateAll(
-        fromDir: File,
-        service: Service,
-        recursive: Boolean,
-        checkOnly: Boolean,
-        showDiff: Boolean = false
-    ) {
-        val targets = listFiles(fromDir, recursive)
-            .filter { it.name == DOCUMENT_FILENAME }
-        if (targets.isEmpty() && !recursive) {
-            println("warning: this process is no longer recursive by default. consider to use -r option.")
-        }
-        targets.forEach {
-            service.sync(it.parentFile, checkOnly, showDiff)
-        }
-    }
-
     private fun createDocument(target: File, service: Service) {
         if (!File(target, DOCUMENT_FILENAME).exists()) {
             println("$DOCUMENT_FILENAME not found.")
@@ -226,12 +238,14 @@ class Marksync {
      */
     private fun getService(dotenv: Dotenv): Service? {
         val uploader = getUploader(dotenv)
-        return when (dotenv["SERVICE"]) {
+        val service = dotenv["SERVICE"]
+        val serviceName = dotenv["SERVICE_NAME"]
+        return when (service) {
             "qiita" -> {
                 val username = dotenv["QIITA_USERNAME"]
                 val accessToken = dotenv["QIITA_ACCESS_TOKEN"]
                 if (username != null && accessToken != null) {
-                    QiitaService(username, accessToken, uploader)
+                    QiitaService(serviceName ?: service, username, accessToken, uploader)
                 } else null
             }
             "esa" -> {
@@ -239,7 +253,7 @@ class Marksync {
                 val username = dotenv["ESA_USERNAME"]
                 val accessToken = dotenv["ESA_ACCESS_TOKEN"]
                 if (team != null && username != null && accessToken != null) {
-                    EsaService(team, username, accessToken, uploader)
+                    EsaService(serviceName ?: service, team, username, accessToken, uploader)
                 } else null
             }
             else -> null
@@ -275,5 +289,11 @@ class Marksync {
         const val ENV_PREFIX = ".marksync"
         const val ENV_DEFAULT = "default"
         const val DOCUMENT_FILENAME = "index.md"
+
+        @JvmStatic
+        fun run(args: Array<String>) {
+            val exitCode = CommandLine(Marksync()).execute(*args)
+            exitProcess(exitCode)
+        }
     }
 }

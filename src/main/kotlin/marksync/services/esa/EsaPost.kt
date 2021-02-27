@@ -17,7 +17,6 @@ data class EsaPost(
     val wip: Boolean = true,
     val body_md: String,
     val name: String,
-    val message: String? = null,
     override val files: ArrayList<FileInfo> = arrayListOf()
 ) : ServiceDocument() {
     override fun getDocumentId(): String? = number?.toString()

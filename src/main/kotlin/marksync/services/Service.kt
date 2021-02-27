@@ -9,8 +9,11 @@ import java.io.File
  * Service class.
  */
 abstract class Service(
+    serviceName: String,
     val uploader: Uploader?
 ) {
+    val metaFilename = "$METAFILE_PREFIX.$serviceName.yml"
+
     /**
      * Get all documents.
      *
@@ -55,18 +58,21 @@ abstract class Service(
      * Update document to service.
      *
      * @param doc ServiceDocument object to update
+     * @param message update message
      * @return Updated ServiceDocument object
      */
-    abstract fun update(doc: ServiceDocument): ServiceDocument?
+    abstract fun update(doc: ServiceDocument, message: String?): ServiceDocument?
 
     /**
      * Sync documents to service.
      *
      * @param dir Target directory
-     * @param checkOnly Set true to check only
+     * @param force Force update
+     * @param message update message
+     * @param checkOnly Check only
      * @param showDiff Show diff
      */
-    fun sync(dir: File, checkOnly: Boolean, showDiff: Boolean) {
+    fun sync(dir: File, force: Boolean, message: String?, checkOnly: Boolean, showDiff: Boolean) {
         val target = dir.path
         val doc = Document.of(dir)
         this.toServiceDocument(doc, dir)?.let { (newDoc, expectDigest) ->
@@ -91,6 +97,8 @@ abstract class Service(
                             println("  $expectDigest:${oldDoc.getDigest()}")
                         } else {
                             println("! $target")
+                        }
+                        if (!drifted || force) {
                             doSync = true
                         }
                         if (showDiff) {
@@ -124,11 +132,15 @@ abstract class Service(
                 }
 
                 // update document
-                update(newDoc)?.also { updatedDoc ->
+                update(newDoc, message)?.also { updatedDoc ->
                     println("  ->updated. ${updatedDoc.getDocumentUrl()}")
                     saveMeta(updatedDoc, dir, newDoc.files)
                 } ?: println("  ->failed.")
             }
         }
+    }
+
+    companion object {
+        const val METAFILE_PREFIX = "marksync"
     }
 }

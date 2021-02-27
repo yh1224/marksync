@@ -11,16 +11,17 @@ import java.io.File
 /**
  * Qiita service class.
  *
+ * @param serviceName Service name
  * @param username Username
  * @param accessToken Access Token
  * @param uploader Uploader
  */
 class QiitaService(
-    val username: String,
+    serviceName: String,
+    private val username: String,
     accessToken: String,
     uploader: Uploader? = null
-) : Service(uploader) {
-    private val metaFilename = META_FILENAME
+) : Service(serviceName, uploader) {
     private val apiClient = QiitaApiClient(accessToken)
 
     private var items: List<QiitaItem>? = null
@@ -88,7 +89,7 @@ class QiitaService(
         )
     }
 
-    override fun update(doc: ServiceDocument): ServiceDocument? {
+    override fun update(doc: ServiceDocument, message: String?): ServiceDocument? {
         val item = doc as QiitaItem
         val data = Mapper.getJson(
             mapOf(
@@ -101,9 +102,5 @@ class QiitaService(
         return item.id?.let { id ->
             apiClient.updateItem(id, data)
         } ?: apiClient.createItem(data)
-    }
-
-    companion object {
-        const val META_FILENAME = "marksync.qiita.yml"
     }
 }

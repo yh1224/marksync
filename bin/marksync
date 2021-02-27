@@ -1,5 +1,5 @@
 #!/bin/sh
-MARKSYNC_HOME="$( cd "$( dirname "$0" )" && cd .. && pwd )"
+MARKSYNC_HOME="$(cd "$(dirname "$0")" && cd .. && pwd)"
 MARKSYNC_BIN="${MARKSYNC_HOME}/build/install/marksync/bin/marksync"
 
 BUILD=
@@ -7,9 +7,8 @@ if [ "$1" = "--build" ]; then
   BUILD=yes
   shift
 fi
-if [ -n "${BUILD}" -o ! -e ${MARKSYNC_BIN} ];then
+if [ -n "${BUILD}" ] || [ ! -e "${MARKSYNC_BIN}" ]; then
   (cd "${MARKSYNC_HOME}" && ./gradlew installDist) || exit $?
 fi
 
-ARGS=$@
-${MARKSYNC_BIN} ${ARGS}
+${MARKSYNC_BIN} "$@"
