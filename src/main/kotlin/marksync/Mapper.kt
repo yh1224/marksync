@@ -20,6 +20,8 @@ object Mapper {
 
     fun <A> readJson(str: String, aClass: Class<A>): A = jsonMapper.readValue(str, aClass)
 
+    fun <A> readYaml(str: String, aClass: Class<A>): A = yamlMapper.readValue(str, aClass)
+
     fun <A> readYaml(file: File, aClass: Class<A>): A = yamlMapper.readValue(file, aClass)
 
     fun <A> writeYaml(file: File, obj: A): Unit = yamlMapper.writeValue(file, obj)

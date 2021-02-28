@@ -7,6 +7,7 @@ import marksync.services.ServiceDocument
 import marksync.services.esa.EsaService
 import marksync.services.esa.EsaUploader
 import marksync.services.qiita.QiitaService
+import marksync.services.zenn.ZennService
 import marksync.uploader.S3Uploader
 import marksync.uploader.Uploader
 import picocli.CommandLine
@@ -254,6 +255,23 @@ class Marksync {
                 val accessToken = dotenv["ESA_ACCESS_TOKEN"]
                 if (team != null && username != null && accessToken != null) {
                     EsaService(serviceName ?: service, team, username, accessToken, uploader)
+                } else null
+            }
+            "zenn" -> {
+                val username = dotenv["ZENN_USERNAME"]
+                val gitDir = dotenv["ZENN_GIT_DIR"]
+                val gitUrl = dotenv["ZENN_GIT_URL"]
+                val gitBranch = dotenv["ZENN_GIT_BRANCH"]
+                val gitUsername = dotenv["ZENN_GIT_USERNAME"]
+                val gitPassword = dotenv["ZENN_GIT_PASSWORD"]
+                if (username != null && gitDir != null
+                    && gitUrl != null && gitBranch != null && gitUsername != null && gitPassword != null
+                ) {
+                    ZennService(
+                        serviceName ?: service, username,
+                        gitDir, gitUrl, gitBranch, gitUsername, gitPassword,
+                        uploader
+                    )
                 } else null
             }
             else -> null
