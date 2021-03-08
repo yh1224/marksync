@@ -22,7 +22,7 @@ data class FileInfo(
         /**
          * Calculate file digest.
          */
-        private fun sha1(file: File): String {
+        fun sha1(file: File): String {
             val digest = MessageDigest.getInstance("SHA-1")
             digest.update(Files.readAllBytes(file.toPath()))
             return Hex.encodeHexString(digest.digest())

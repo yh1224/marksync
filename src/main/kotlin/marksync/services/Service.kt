@@ -75,68 +75,68 @@ abstract class Service(
     fun sync(dir: File, force: Boolean, message: String?, checkOnly: Boolean, showDiff: Boolean) {
         val target = dir.path
         val doc = Document.of(dir)
-        this.toServiceDocument(doc, dir)?.let { (newDoc, expectDigest) ->
-            // check
-            var doSync = false
-            val docId = newDoc.getDocumentId()
-            if (docId != null) {
-                val oldDoc = getDocument(docId)
-                if (oldDoc == null) {
-                    println("? $target: ($docId) not exists.")
-                } else {
-                    val modifiedFiles = doc.files.filter { (filename, file) ->
-                        !(newDoc.files.find { it.filename == filename }?.isIdenticalTo(file) ?: false)
-                    }.map { it.key }
-                    val modified = newDoc.isModified(oldDoc) || modifiedFiles.isNotEmpty()
-                    val drifted = expectDigest != null && oldDoc.getDigest() != expectDigest
-                    if (!modified && !drifted) {
-                        println("  $target: not modified.")
-                    } else {
-                        if (drifted) {
-                            println("x $target: modified externally.")
-                            println("  $expectDigest:${oldDoc.getDigest()}")
-                        } else {
-                            println("! $target")
-                        }
-                        if (!drifted || force) {
-                            doSync = true
-                        }
-                        if (showDiff) {
-                            newDoc.isModified(oldDoc, printDiff = true)
-                            if (modifiedFiles.isNotEmpty()) {
-                                println("  [files]")
-                                modifiedFiles.forEach { println("  !$it") }
-                            }
-                            println("  ----------------------------------------------------------------")
-                        }
-                    }
-                }
+        val (newDoc, expectDigest) = this.toServiceDocument(doc, dir) ?: return
+
+        // check
+        var doSync = false
+        val docId = newDoc.getDocumentId()
+        if (docId != null) {
+            val oldDoc = getDocument(docId)
+            if (oldDoc == null) {
+                println("? $target: ($docId) not exists.")
             } else {
-                println("+ $target")
-                doSync = true
-            }
-
-            // sync
-            if (doSync && !checkOnly) {
-                if (uploader != null) {
-                    // upload files
-                    doc.files.forEach { (filename, file) ->
-                        if (newDoc.files.find { it.filename == filename }?.isIdenticalTo(file) != true) {
-                            uploader.upload(file)?.also { url ->
-                                newDoc.files.find { it.filename == filename }?.let { newDoc.files.remove(it) }
-                                newDoc.files.add(FileInfo(filename, file, url))
-                                println("  ->uploaded. $filename to $url")
-                            } ?: println("  ->upload failed. $filename")
+                val modifiedFiles = doc.files.filter { (filename, file) ->
+                    !(newDoc.files.find { it.filename == filename }?.isIdenticalTo(file) ?: false)
+                }.map { it.key }
+                val modified = newDoc.isModified(oldDoc) || modifiedFiles.isNotEmpty()
+                val drifted = expectDigest != null && oldDoc.getDigest() != expectDigest
+                if (!modified && !drifted) {
+                    println("  $target: not modified.")
+                } else {
+                    if (drifted) {
+                        println("x $target: modified externally.")
+                        println("  $expectDigest:${oldDoc.getDigest()}")
+                    } else {
+                        println("! $target")
+                    }
+                    if (!drifted || force) {
+                        doSync = true
+                    }
+                    if (showDiff) {
+                        newDoc.isModified(oldDoc, printDiff = true)
+                        if (modifiedFiles.isNotEmpty()) {
+                            println("  [files]")
+                            modifiedFiles.forEach { println("  !$it") }
                         }
+                        println("  ----------------------------------------------------------------")
                     }
                 }
-
-                // update document
-                update(newDoc, message)?.also { updatedDoc ->
-                    println("  ->updated. ${updatedDoc.getDocumentUrl()}")
-                    saveMeta(updatedDoc, dir, newDoc.files)
-                } ?: println("  ->failed.")
             }
+        } else {
+            println("+ $target")
+            doSync = true
+        }
+
+        // sync
+        if (doSync && !checkOnly) {
+            if (uploader != null) {
+                // upload files
+                doc.files.forEach { (filename, file) ->
+                    if (newDoc.files.find { it.filename == filename }?.isIdenticalTo(file) != true) {
+                        uploader.upload(file)?.also { url ->
+                            newDoc.files.find { it.filename == filename }?.let { newDoc.files.remove(it) }
+                            newDoc.files.add(FileInfo(filename, file, url))
+                            println("  ->uploaded. $filename to $url")
+                        } ?: println("  ->upload failed. $filename")
+                    }
+                }
+            }
+
+            // update document
+            update(newDoc, message)?.also { updatedDoc ->
+                println("  ->updated. ${updatedDoc.getDocumentUrl()}")
+                saveMeta(updatedDoc, dir, newDoc.files)
+            } ?: println("  ->failed.")
         }
     }
 
