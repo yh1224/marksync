@@ -1,16 +1,12 @@
 package marksync.services.qiita
 
+import marksync.lib.UmlUtils
 import marksync.services.ServiceDocument
 import marksync.uploader.FileInfo
-import net.sourceforge.plantuml.code.TranscoderUtil
 import org.apache.commons.codec.binary.Hex
 import java.io.File
 import java.io.FileWriter
 import java.security.MessageDigest
-import net.sourceforge.plantuml.SourceStringReader
-
-
-
 
 data class QiitaItem(
     val id: String?,
@@ -41,19 +37,6 @@ data class QiitaItem(
     override fun getDocumentTitle(): String = title
 
     /**
-     * Convert UML tag to use PlantUML server.
-     *
-     * @param umlBody UML string
-     * @return Converted string
-     */
-    fun convertUml(umlBody: String): String {
-        val reader = SourceStringReader(umlBody)
-        val uml = "@startuml\n$umlBody\n@enduml\n"
-        val encodedUml = TranscoderUtil.getDefaultTranscoder().encode(uml)
-        return "![](http://www.plantuml.com/plantuml/svg/$encodedUml)\n"
-    }
-
-    /**
      * Convert markdown to Qiita.
      *
      * @return body
@@ -67,7 +50,8 @@ data class QiitaItem(
             if (line.trim() == "```plantuml" || line.trim() == "```puml" || line.trim() == "```uml") {
                 fUml = true
             } else if (fUml && line.trim() == "```") {
-                newBody.append(convertUml(umlBody.toString()))
+                val url = UmlUtils.convertToUrl(umlBody.toString())
+                newBody.append("![]($url)")
                 fUml = false
             } else if (fUml) {
                 umlBody.append(line)

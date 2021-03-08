@@ -1,8 +1,8 @@
 package marksync.services.zenn
 
+import marksync.lib.UmlUtils
 import marksync.services.ServiceDocument
 import marksync.uploader.FileInfo
-import net.sourceforge.plantuml.code.TranscoderUtil
 import org.apache.commons.codec.binary.Hex
 import java.io.File
 import java.io.FileWriter
@@ -37,18 +37,6 @@ data class ZennArticle(
     override fun getDocumentTitle(): String = title
 
     /**
-     * Convert UML tag to use PlantUML server.
-     *
-     * @param umlBody UML string
-     * @return Converted string
-     */
-    private fun convertUml(umlBody: String): String {
-        val uml = "@startuml\n$umlBody\n@enduml\n"
-        val encodedUml = TranscoderUtil.getDefaultTranscoder().encode(uml)
-        return "![](http://www.plantuml.com/plantuml/svg/$encodedUml)\n"
-    }
-
-    /**
      * Convert markdown to Zenn.
      *
      * @return body
@@ -62,7 +50,8 @@ data class ZennArticle(
             if (line.trim() == "```plantuml" || line.trim() == "```puml" || line.trim() == "```uml") {
                 fUml = true
             } else if (fUml && line.trim() == "```") {
-                newBody.append(convertUml(umlBody.toString()))
+                val url = UmlUtils.convertToUrl(umlBody.toString())
+                newBody.append("![]($url)")
                 fUml = false
             } else if (fUml) {
                 umlBody.append(line)
