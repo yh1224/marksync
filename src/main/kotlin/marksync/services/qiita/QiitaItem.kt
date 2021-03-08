@@ -7,6 +7,10 @@ import org.apache.commons.codec.binary.Hex
 import java.io.File
 import java.io.FileWriter
 import java.security.MessageDigest
+import net.sourceforge.plantuml.SourceStringReader
+
+
+
 
 data class QiitaItem(
     val id: String?,
@@ -42,7 +46,8 @@ data class QiitaItem(
      * @param umlBody UML string
      * @return Converted string
      */
-    private fun convertUml(umlBody: String): String {
+    fun convertUml(umlBody: String): String {
+        val reader = SourceStringReader(umlBody)
         val uml = "@startuml\n$umlBody\n@enduml\n"
         val encodedUml = TranscoderUtil.getDefaultTranscoder().encode(uml)
         return "![](http://www.plantuml.com/plantuml/svg/$encodedUml)\n"
