@@ -1,9 +1,9 @@
-package marksync.services.esa
+package marksync.remote.esa
 
-import marksync.Document
-import marksync.Mapper
-import marksync.services.Service
-import marksync.services.ServiceDocument
+import marksync.LocalDocument
+import marksync.lib.Mapper
+import marksync.remote.RemoteDocument
+import marksync.remote.RemoteService
 import marksync.uploader.FileInfo
 import marksync.uploader.Uploader
 import java.io.File
@@ -23,7 +23,7 @@ class EsaService(
     private val username: String,
     private val accessToken: String,
     uploader: Uploader? = null
-) : Service(serviceName, uploader) {
+) : RemoteService(serviceName, uploader) {
     private val apiClient = EsaApiClient(teamName, accessToken)
 
     private var posts: List<EsaPost>? = null
@@ -35,10 +35,10 @@ class EsaService(
         return posts!!.map { post -> post.number!!.toString() to post }.toMap()
     }
 
-    override fun getDocument(id: String): ServiceDocument? =
+    override fun getDocument(id: String): RemoteDocument? =
         posts?.find { it.number == id.toInt() } ?: apiClient.getPost(username, id.toInt())
 
-    override fun toServiceDocument(doc: Document, dir: File): Pair<EsaPost, String?>? {
+    override fun toServiceDocument(doc: LocalDocument, dir: File): Pair<EsaPost, String?>? {
         val metaFile = File(dir, metaFilename)
         return if (metaFile.exists()) {
             val postMeta = Mapper.readYaml(metaFile, EsaPostMeta::class.java)
@@ -53,7 +53,7 @@ class EsaService(
                     wip = postMeta.wip,
                     name = doc.title,
                     body_md = doc.body,
-                    files = postMeta.files
+                    fileInfoList = postMeta.files
                 ),
                 postMeta.digest
             )
@@ -72,7 +72,7 @@ class EsaService(
         println("${metaFile.name} created.")
     }
 
-    override fun saveMeta(doc: ServiceDocument, dir: File, files: ArrayList<FileInfo>) {
+    override fun saveMeta(doc: RemoteDocument, dir: File, files: ArrayList<FileInfo>) {
         val post = doc as EsaPost
         val metaFile = File(dir, metaFilename)
 
@@ -92,7 +92,7 @@ class EsaService(
         )
     }
 
-    override fun update(doc: ServiceDocument, message: String?): ServiceDocument? {
+    override fun update(doc: RemoteDocument, message: String?): RemoteDocument? {
         val post = doc as EsaPost
         val data = Mapper.getJson(
             mapOf(

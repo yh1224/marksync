@@ -2,12 +2,12 @@ package marksync
 
 import io.github.cdimascio.dotenv.Dotenv
 import io.github.cdimascio.dotenv.dotenv
-import marksync.services.Service
-import marksync.services.ServiceDocument
-import marksync.services.esa.EsaService
-import marksync.services.esa.EsaUploader
-import marksync.services.qiita.QiitaService
-import marksync.services.zenn.ZennService
+import marksync.remote.RemoteDocument
+import marksync.remote.RemoteService
+import marksync.remote.esa.EsaService
+import marksync.remote.esa.EsaUploader
+import marksync.remote.qiita.QiitaService
+import marksync.remote.zenn.ZennService
 import marksync.uploader.S3Uploader
 import marksync.uploader.Uploader
 import picocli.CommandLine
@@ -208,22 +208,22 @@ class Marksync {
      * @param outDir Output directory
      * @param service Service object
      */
-    private fun importAll(outDir: File, service: Service) {
+    private fun importAll(outDir: File, service: RemoteService) {
         if (outDir.exists()) {
             println("$outDir already exists.")
             return
         }
-        service.getDocuments().forEach { (docId: String, doc: ServiceDocument) ->
+        service.getDocuments().forEach { (docId: String, doc: RemoteDocument) ->
             println("$docId ${doc.getDocumentUrl()}")
             val dir = File(outDir, docId)
             println("  -> ${dir.absolutePath}")
             dir.mkdirs()
             service.saveMeta(doc, dir)
-            doc.saveBody(File(dir, Document.DOCUMENT_FILENAME))
+            doc.saveBody(File(dir, LocalDocument.DOCUMENT_FILENAME))
         }
     }
 
-    private fun createDocument(target: File, service: Service) {
+    private fun createDocument(target: File, service: RemoteService) {
         if (!File(target, DOCUMENT_FILENAME).exists()) {
             println("$DOCUMENT_FILENAME not found.")
             return
@@ -237,7 +237,7 @@ class Marksync {
      * @param dotenv Environment
      * @return Service
      */
-    private fun getService(dotenv: Dotenv): Service? {
+    private fun getService(dotenv: Dotenv): RemoteService? {
         val uploader = getUploader(dotenv)
         val service = dotenv["SERVICE"]
         val serviceName = dotenv["SERVICE_NAME"]

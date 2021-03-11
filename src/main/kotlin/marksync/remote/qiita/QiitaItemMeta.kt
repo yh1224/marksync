@@ -1,4 +1,4 @@
-package marksync.services.qiita
+package marksync.remote.qiita
 
 import marksync.uploader.FileInfo
 

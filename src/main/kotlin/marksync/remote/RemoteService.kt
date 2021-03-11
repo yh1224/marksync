@@ -1,14 +1,14 @@
-package marksync.services
+package marksync.remote
 
-import marksync.Document
+import marksync.LocalDocument
 import marksync.uploader.FileInfo
 import marksync.uploader.Uploader
 import java.io.File
 
 /**
- * Service class.
+ * Remote service
  */
-abstract class Service(
+abstract class RemoteService(
     serviceName: String,
     val uploader: Uploader?
 ) {
@@ -19,7 +19,7 @@ abstract class Service(
      *
      * @return Documents by keys
      */
-    abstract fun getDocuments(): Map<String, ServiceDocument>
+    abstract fun getDocuments(): Map<String, RemoteDocument>
 
     /**
      * Get one document.
@@ -27,7 +27,7 @@ abstract class Service(
      * @param id Document identifier
      * @return Document
      */
-    abstract fun getDocument(id: String): ServiceDocument?
+    abstract fun getDocument(id: String): RemoteDocument?
 
     /**
      * Get service document from Document.
@@ -36,7 +36,7 @@ abstract class Service(
      * @param dir Document directory
      * @return ServiceDocument object and expect digest
      */
-    abstract fun toServiceDocument(doc: Document, dir: File): Pair<ServiceDocument, String?>?
+    abstract fun toServiceDocument(doc: LocalDocument, dir: File): Pair<RemoteDocument, String?>?
 
     /**
      * Create meta data for service.
@@ -52,7 +52,7 @@ abstract class Service(
      * @param dir Document directory
      * @param files Files
      */
-    abstract fun saveMeta(doc: ServiceDocument, dir: File, files: ArrayList<FileInfo> = arrayListOf())
+    abstract fun saveMeta(doc: RemoteDocument, dir: File, files: ArrayList<FileInfo> = arrayListOf())
 
     /**
      * Update document to service.
@@ -61,7 +61,7 @@ abstract class Service(
      * @param message update message
      * @return Updated ServiceDocument object
      */
-    abstract fun update(doc: ServiceDocument, message: String?): ServiceDocument?
+    abstract fun update(doc: RemoteDocument, message: String?): RemoteDocument?
 
     /**
      * Sync documents to service.
@@ -74,7 +74,7 @@ abstract class Service(
      */
     fun sync(dir: File, force: Boolean, message: String?, checkOnly: Boolean, showDiff: Boolean) {
         val target = dir.path
-        val doc = Document.of(dir)
+        val doc = LocalDocument.of(dir)
         val (newDoc, expectDigest) = this.toServiceDocument(doc, dir) ?: return
 
         // check
@@ -86,7 +86,7 @@ abstract class Service(
                 println("? $target: ($docId) not exists.")
             } else {
                 val modifiedFiles = doc.files.filter { (filename, file) ->
-                    !(newDoc.files.find { it.filename == filename }?.isIdenticalTo(file) ?: false)
+                    !(newDoc.fileInfoList.find { it.filename == filename }?.isIdenticalTo(file) ?: false)
                 }.map { it.key }
                 val modified = newDoc.isModified(oldDoc) || modifiedFiles.isNotEmpty()
                 val drifted = expectDigest != null && oldDoc.getDigest() != expectDigest
@@ -122,10 +122,10 @@ abstract class Service(
             if (uploader != null) {
                 // upload files
                 doc.files.forEach { (filename, file) ->
-                    if (newDoc.files.find { it.filename == filename }?.isIdenticalTo(file) != true) {
+                    if (newDoc.fileInfoList.find { it.filename == filename }?.isIdenticalTo(file) != true) {
                         uploader.upload(file)?.also { url ->
-                            newDoc.files.find { it.filename == filename }?.let { newDoc.files.remove(it) }
-                            newDoc.files.add(FileInfo(filename, file, url))
+                            newDoc.fileInfoList.find { it.filename == filename }?.let { newDoc.fileInfoList.remove(it) }
+                            newDoc.fileInfoList.add(FileInfo(filename, file, url))
                             println("  ->uploaded. $filename to $url")
                         } ?: println("  ->upload failed. $filename")
                     }
@@ -135,7 +135,7 @@ abstract class Service(
             // update document
             update(newDoc, message)?.also { updatedDoc ->
                 println("  ->updated. ${updatedDoc.getDocumentUrl()}")
-                saveMeta(updatedDoc, dir, newDoc.files)
+                saveMeta(updatedDoc, dir, newDoc.fileInfoList)
             } ?: println("  ->failed.")
         }
     }

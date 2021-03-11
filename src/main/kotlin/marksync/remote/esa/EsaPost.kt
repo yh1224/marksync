@@ -1,6 +1,6 @@
-package marksync.services.esa
+package marksync.remote.esa
 
-import marksync.services.ServiceDocument
+import marksync.remote.RemoteDocument
 import marksync.uploader.FileInfo
 import org.apache.commons.codec.binary.Hex
 import java.io.File
@@ -17,8 +17,8 @@ data class EsaPost(
     val wip: Boolean = true,
     val body_md: String,
     val name: String,
-    override val files: ArrayList<FileInfo> = arrayListOf()
-) : ServiceDocument() {
+    override val fileInfoList: ArrayList<FileInfo> = arrayListOf()
+) : RemoteDocument() {
     override fun getDocumentId(): String? = number?.toString()
 
     override fun getDocumentUrl(): String? = url
@@ -59,7 +59,7 @@ data class EsaPost(
         writer.close()
     }
 
-    override fun isModified(oldDoc: ServiceDocument, printDiff: Boolean): Boolean {
+    override fun isModified(oldDoc: RemoteDocument, printDiff: Boolean): Boolean {
         val oldPost = oldDoc as EsaPost
         return listOf(
             diff("category", oldPost.category, this.category, printDiff),

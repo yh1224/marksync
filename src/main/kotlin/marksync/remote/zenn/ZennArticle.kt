@@ -1,7 +1,7 @@
-package marksync.services.zenn
+package marksync.remote.zenn
 
 import marksync.lib.UmlUtils
-import marksync.services.ServiceDocument
+import marksync.remote.RemoteDocument
 import marksync.uploader.FileInfo
 import org.apache.commons.codec.binary.Hex
 import java.io.File
@@ -16,8 +16,8 @@ data class ZennArticle(
     val published: Boolean,
     val title: String,
     val body: String,
-    override val files: ArrayList<FileInfo> = arrayListOf()
-) : ServiceDocument() {
+    override val fileInfoList: ArrayList<FileInfo> = arrayListOf()
+) : RemoteDocument() {
     override fun getDocumentId() = slug
 
     override fun getDocumentUrl() = url
@@ -69,7 +69,7 @@ data class ZennArticle(
         writer.close()
     }
 
-    override fun isModified(oldDoc: ServiceDocument, printDiff: Boolean): Boolean {
+    override fun isModified(oldDoc: RemoteDocument, printDiff: Boolean): Boolean {
         val oldItem = oldDoc as ZennArticle
         return listOf(
             diff("type", oldItem.type, this.type, printDiff),

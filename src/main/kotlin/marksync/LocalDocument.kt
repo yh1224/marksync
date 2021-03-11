@@ -5,12 +5,12 @@ import java.io.File
 import java.nio.file.Files
 
 /**
- * Document class.
+ * Local document class.
  *
  * @param title Document title
  * @param body Document body
  */
-data class Document(
+data class LocalDocument(
     private val dir: File,
     val title: String,
     val body: String
@@ -39,7 +39,7 @@ data class Document(
          * @param dir Document directory
          * @return Document
          */
-        fun of(dir: File): Document {
+        fun of(dir: File): LocalDocument {
             var title: String? = null
             val content = String(Files.readAllBytes(File(dir, DOCUMENT_FILENAME).toPath()))
             val bodyBuf = StringBuilder()
@@ -50,7 +50,7 @@ data class Document(
                     title = line.replaceFirst("^#\\s+".toRegex(), "").trim()
                 }
             }
-            return Document(
+            return LocalDocument(
                 dir,
                 title ?: "",
                 bodyBuf.toString().replaceFirst("[\\r\\n]+".toRegex(), "")

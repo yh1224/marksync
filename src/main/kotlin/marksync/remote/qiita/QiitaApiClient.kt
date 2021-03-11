@@ -1,6 +1,6 @@
-package marksync.services.qiita
+package marksync.remote.qiita
 
-import marksync.Mapper
+import marksync.lib.Mapper
 import okhttp3.Headers.Companion.toHeaders
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient

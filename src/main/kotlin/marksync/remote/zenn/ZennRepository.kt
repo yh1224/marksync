@@ -1,6 +1,6 @@
-package marksync.services.zenn
+package marksync.remote.zenn
 
-import marksync.Mapper
+import marksync.lib.Mapper
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.lib.Constants
 import org.eclipse.jgit.lib.RepositoryBuilder

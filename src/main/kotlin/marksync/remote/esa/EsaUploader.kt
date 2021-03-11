@@ -1,4 +1,4 @@
-package marksync.services.esa
+package marksync.remote.esa
 
 import marksync.uploader.Uploader
 import java.io.File

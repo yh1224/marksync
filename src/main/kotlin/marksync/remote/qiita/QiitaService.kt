@@ -1,9 +1,9 @@
-package marksync.services.qiita
+package marksync.remote.qiita
 
-import marksync.Document
-import marksync.Mapper
-import marksync.services.Service
-import marksync.services.ServiceDocument
+import marksync.LocalDocument
+import marksync.lib.Mapper
+import marksync.remote.RemoteDocument
+import marksync.remote.RemoteService
 import marksync.uploader.FileInfo
 import marksync.uploader.Uploader
 import java.io.File
@@ -21,7 +21,7 @@ class QiitaService(
     private val username: String,
     accessToken: String,
     uploader: Uploader? = null
-) : Service(serviceName, uploader) {
+) : RemoteService(serviceName, uploader) {
     private val apiClient = QiitaApiClient(accessToken)
 
     private var items: List<QiitaItem>? = null
@@ -33,10 +33,10 @@ class QiitaService(
         return items!!.map { it.id!! to it }.toMap()
     }
 
-    override fun getDocument(id: String): ServiceDocument? =
+    override fun getDocument(id: String): RemoteDocument? =
         items?.find { it.id == id } ?: apiClient.getItem(id)
 
-    override fun toServiceDocument(doc: Document, dir: File): Pair<QiitaItem, String?>? {
+    override fun toServiceDocument(doc: LocalDocument, dir: File): Pair<QiitaItem, String?>? {
         val metaFile = File(dir, metaFilename)
 
         return if (metaFile.exists()) {
@@ -51,7 +51,7 @@ class QiitaService(
                     `private` = itemMeta.`private`,
                     body = doc.body,
                     title = doc.title,
-                    files = itemMeta.files
+                    fileInfoList = itemMeta.files
                 ),
                 itemMeta.digest
             )
@@ -70,7 +70,7 @@ class QiitaService(
         println("${metaFile.name} created.")
     }
 
-    override fun saveMeta(doc: ServiceDocument, dir: File, files: ArrayList<FileInfo>) {
+    override fun saveMeta(doc: RemoteDocument, dir: File, files: ArrayList<FileInfo>) {
         val item = doc as QiitaItem
         val metaFile = File(dir, metaFilename)
 
@@ -89,7 +89,7 @@ class QiitaService(
         )
     }
 
-    override fun update(doc: ServiceDocument, message: String?): ServiceDocument? {
+    override fun update(doc: RemoteDocument, message: String?): RemoteDocument? {
         val item = doc as QiitaItem
         val data = Mapper.getJson(
             mapOf(

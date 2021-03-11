@@ -1,4 +1,4 @@
-package marksync.services.zenn
+package marksync.remote.zenn
 
 import marksync.uploader.FileInfo
 

@@ -1,17 +1,16 @@
-package marksync.services
+package marksync.remote
 
 import com.github.difflib.DiffUtils
 import com.github.difflib.UnifiedDiffUtils
-import marksync.Mapper
+import marksync.lib.Mapper
 import marksync.uploader.FileInfo
 import java.io.File
-import java.net.URLEncoder
 
 /**
- * Service specific document class.
+ * Service specific document
  */
-abstract class ServiceDocument {
-    abstract val files: ArrayList<FileInfo>
+abstract class RemoteDocument {
+    abstract val fileInfoList: ArrayList<FileInfo>
 
     /**
      * Get document identifier on this service.
@@ -55,7 +54,7 @@ abstract class ServiceDocument {
      */
     fun convertFiles(body: String): String {
         var result = body
-        files.forEach { fileInfo ->
+        fileInfoList.forEach { fileInfo ->
             val filename = fileInfo.filename.replace(" ", "%20")
             result = result.replace(
                 "\\[(.*)\\]\\(\\Q${filename}\\E\\)".toRegex(),
@@ -78,7 +77,7 @@ abstract class ServiceDocument {
      * @param oldDoc Old document
      * @param printDiff true to print differ
      */
-    abstract fun isModified(oldDoc: ServiceDocument, printDiff: Boolean = false): Boolean
+    abstract fun isModified(oldDoc: RemoteDocument, printDiff: Boolean = false): Boolean
 
     /**
      * Print diff.

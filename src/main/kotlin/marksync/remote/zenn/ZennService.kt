@@ -1,9 +1,9 @@
-package marksync.services.zenn
+package marksync.remote.zenn
 
-import marksync.Document
-import marksync.Mapper
-import marksync.services.Service
-import marksync.services.ServiceDocument
+import marksync.LocalDocument
+import marksync.lib.Mapper
+import marksync.remote.RemoteDocument
+import marksync.remote.RemoteService
 import marksync.uploader.FileInfo
 import marksync.uploader.Uploader
 import java.io.File
@@ -29,7 +29,7 @@ class ZennService(
     gitUsername: String,
     gitPassword: String,
     uploader: Uploader? = null
-) : Service(serviceName, uploader) {
+) : RemoteService(serviceName, uploader) {
     private val zennRepository =
         ZennRepository(username, gitDir, gitUrl, gitBranch, gitUsername, gitPassword)
 
@@ -42,10 +42,10 @@ class ZennService(
         return articles!!.map { it.slug!! to it }.toMap()
     }
 
-    override fun getDocument(id: String): ServiceDocument? =
+    override fun getDocument(id: String): RemoteDocument? =
         articles?.find { it.slug == id } ?: zennRepository.getArticle(id)
 
-    override fun toServiceDocument(doc: Document, dir: File): Pair<ZennArticle, String?>? {
+    override fun toServiceDocument(doc: LocalDocument, dir: File): Pair<ZennArticle, String?>? {
         val metaFile = File(dir, metaFilename)
         return if (metaFile.exists()) {
             val articleMeta = Mapper.readYaml(metaFile, ZennDocMeta::class.java)
@@ -58,7 +58,7 @@ class ZennService(
                     published = articleMeta.published,
                     title = doc.title,
                     body = doc.body,
-                    files = articleMeta.files
+                    fileInfoList = articleMeta.files
                 ),
                 articleMeta.digest
             )
@@ -77,7 +77,7 @@ class ZennService(
         println("${metaFile.name} created.")
     }
 
-    override fun saveMeta(doc: ServiceDocument, dir: File, files: ArrayList<FileInfo>) {
+    override fun saveMeta(doc: RemoteDocument, dir: File, files: ArrayList<FileInfo>) {
         val article = doc as ZennArticle
         val metaFile = File(dir, metaFilename)
 
@@ -95,7 +95,7 @@ class ZennService(
         )
     }
 
-    override fun update(doc: ServiceDocument, message: String?): ServiceDocument? {
+    override fun update(doc: RemoteDocument, message: String?): RemoteDocument? {
         return zennRepository.saveArticle(doc as ZennArticle, message)
     }
 }

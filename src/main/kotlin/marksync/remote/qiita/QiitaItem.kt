@@ -1,7 +1,7 @@
-package marksync.services.qiita
+package marksync.remote.qiita
 
 import marksync.lib.UmlUtils
-import marksync.services.ServiceDocument
+import marksync.remote.RemoteDocument
 import marksync.uploader.FileInfo
 import org.apache.commons.codec.binary.Hex
 import java.io.File
@@ -17,8 +17,8 @@ data class QiitaItem(
     val `private`: Boolean,
     val body: String,
     val title: String,
-    override val files: ArrayList<FileInfo> = arrayListOf()
-) : ServiceDocument() {
+    override val fileInfoList: ArrayList<FileInfo> = arrayListOf()
+) : RemoteDocument() {
     override fun getDocumentId() = id
 
     override fun getDocumentUrl() = url
@@ -69,7 +69,7 @@ data class QiitaItem(
         writer.close()
     }
 
-    override fun isModified(oldDoc: ServiceDocument, printDiff: Boolean): Boolean {
+    override fun isModified(oldDoc: RemoteDocument, printDiff: Boolean): Boolean {
         val oldItem = oldDoc as QiitaItem
         return listOf(
             diff("tags", oldItem.tags, this.tags, printDiff),

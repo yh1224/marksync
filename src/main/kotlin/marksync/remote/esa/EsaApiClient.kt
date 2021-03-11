@@ -1,6 +1,6 @@
-package marksync.services.esa
+package marksync.remote.esa
 
-import marksync.Mapper
+import marksync.lib.Mapper
 import okhttp3.FormBody
 import okhttp3.Headers.Companion.toHeaders
 import okhttp3.MediaType.Companion.toMediaType
