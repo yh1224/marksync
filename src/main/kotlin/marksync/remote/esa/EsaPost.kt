@@ -17,6 +17,7 @@ data class EsaPost(
     val wip: Boolean = true,
     val body_md: String,
     val name: String,
+    override val files: MutableMap<String, File> = mutableMapOf(),
     override val fileInfoList: ArrayList<FileInfo> = arrayListOf()
 ) : RemoteDocument() {
     override fun getDocumentId(): String? = number?.toString()
@@ -39,7 +40,7 @@ data class EsaPost(
 
     override fun getDocumentBody(): String {
         val newBody = StringBuilder()
-        convertFiles(body_md).split("(?<=\n)".toRegex()).forEach { line ->
+        body_md.split("(?<=\n)".toRegex()).forEach { line ->
             when (line.trim()) {
                 "```plantuml" ->
                     newBody.append(line.replace("^```plantuml".toRegex(), "```uml"))
@@ -49,7 +50,7 @@ data class EsaPost(
                     newBody.append(line)
             }
         }
-        return newBody.toString()
+        return convertFiles(newBody.toString())
     }
 
     override fun saveBody(file: File) {

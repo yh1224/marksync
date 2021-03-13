@@ -51,6 +51,7 @@ class QiitaService(
                     `private` = itemMeta.`private`,
                     body = doc.body,
                     title = doc.title,
+                    files = doc.files.toMutableMap(),
                     fileInfoList = itemMeta.files
                 ),
                 itemMeta.digest

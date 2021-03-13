@@ -58,6 +58,7 @@ class ZennService(
                     published = articleMeta.published,
                     title = doc.title,
                     body = doc.body,
+                    files = doc.files.toMutableMap(),
                     fileInfoList = articleMeta.files
                 ),
                 articleMeta.digest

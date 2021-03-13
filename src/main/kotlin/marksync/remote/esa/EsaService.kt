@@ -53,6 +53,7 @@ class EsaService(
                     wip = postMeta.wip,
                     name = doc.title,
                     body_md = doc.body,
+                    files = doc.files.toMutableMap(),
                     fileInfoList = postMeta.files
                 ),
                 postMeta.digest

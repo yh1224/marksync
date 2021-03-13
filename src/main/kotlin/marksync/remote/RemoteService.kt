@@ -74,8 +74,7 @@ abstract class RemoteService(
      */
     fun sync(dir: File, force: Boolean, message: String?, checkOnly: Boolean, showDiff: Boolean) {
         val target = dir.path
-        val doc = LocalDocument.of(dir)
-        val (newDoc, expectDigest) = this.toServiceDocument(doc, dir) ?: return
+        val (newDoc, expectDigest) = this.toServiceDocument(LocalDocument.of(dir), dir) ?: return
 
         // check
         var doSync = false
@@ -85,7 +84,7 @@ abstract class RemoteService(
             if (oldDoc == null) {
                 println("? $target: ($docId) not exists.")
             } else {
-                val modifiedFiles = doc.files.filter { (filename, file) ->
+                val modifiedFiles = newDoc.files.filter { (filename, file) ->
                     !(newDoc.fileInfoList.find { it.filename == filename }?.isIdenticalTo(file) ?: false)
                 }.map { it.key }
                 val modified = newDoc.isModified(oldDoc) || modifiedFiles.isNotEmpty()
@@ -121,7 +120,7 @@ abstract class RemoteService(
         if (doSync && !checkOnly) {
             if (uploader != null) {
                 // upload files
-                doc.files.forEach { (filename, file) ->
+                newDoc.files.forEach { (filename, file) ->
                     if (newDoc.fileInfoList.find { it.filename == filename }?.isIdenticalTo(file) != true) {
                         uploader.upload(file)?.also { url ->
                             newDoc.fileInfoList.find { it.filename == filename }?.let { newDoc.fileInfoList.remove(it) }

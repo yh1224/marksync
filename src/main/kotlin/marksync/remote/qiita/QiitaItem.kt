@@ -17,6 +17,7 @@ data class QiitaItem(
     val `private`: Boolean,
     val body: String,
     val title: String,
+    override val files: MutableMap<String, File> = mutableMapOf(),
     override val fileInfoList: ArrayList<FileInfo> = arrayListOf()
 ) : RemoteDocument() {
     override fun getDocumentId() = id
@@ -45,13 +46,16 @@ data class QiitaItem(
         val newBody = StringBuilder()
         var fUml = false
         val umlBody = StringBuilder()
-        convertFiles(body).split("(?<=\n)".toRegex()).forEach { line ->
+        body.split("(?<=\n)".toRegex()).forEach { line ->
             // convert uml
             if (line.trim() == "```plantuml" || line.trim() == "```puml" || line.trim() == "```uml") {
                 fUml = true
             } else if (fUml && line.trim() == "```") {
-                val url = UmlUtils.convertToUrl(umlBody.toString())
-                newBody.append("![]($url)")
+                val pngFile = UmlUtils.convertToPng(umlBody.toString())
+                if (!files.containsKey(pngFile.name)) {
+                    files[pngFile.name] = pngFile
+                }
+                newBody.append("![](${pngFile.name})\n")
                 fUml = false
             } else if (fUml) {
                 umlBody.append(line)
@@ -59,7 +63,7 @@ data class QiitaItem(
                 newBody.append(line)
             }
         }
-        return newBody.toString()
+        return convertFiles(newBody.toString())
     }
 
     override fun saveBody(file: File) {

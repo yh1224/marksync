@@ -10,6 +10,7 @@ import java.io.File
  * Service specific document
  */
 abstract class RemoteDocument {
+    abstract val files: MutableMap<String, File>
     abstract val fileInfoList: ArrayList<FileInfo>
 
     /**
