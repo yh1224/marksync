@@ -18,14 +18,13 @@ import java.io.File
  * @param uploader Uploader
  */
 class EsaService(
-    serviceName: String,
+    serviceName: String = SERVICE_NAME,
     private val teamName: String,
     private val username: String,
     private val accessToken: String,
-    uploader: Uploader? = null
+    uploader: Uploader? = null,
+    private val apiClient: EsaApiClient = EsaApiClient(teamName, accessToken)
 ) : RemoteService(serviceName, uploader) {
-    private val apiClient = EsaApiClient(teamName, accessToken)
-
     private var posts: List<EsaPost>? = null
 
     override fun getDocuments(): Map<String, EsaPost> {
@@ -85,7 +84,7 @@ class EsaService(
                 created_at = post.created_at,
                 updated_at = post.updated_at,
                 digest = post.getDigest(),
-                category = post.category ?: "",
+                category = post.category,
                 tags = post.tags,
                 wip = post.wip,
                 files = files
@@ -93,23 +92,10 @@ class EsaService(
         )
     }
 
-    override fun update(doc: RemoteDocument, message: String?): RemoteDocument? {
-        val post = doc as EsaPost
-        val data = Mapper.getJson(
-            mapOf(
-                "post" to mapOf(
-                    "body_md" to post.getDocumentBody(),
-                    "category" to post.category,
-                    "wip" to post.wip,
-                    "tags" to post.tags,
-                    "name" to post.getDocumentTitle(),
-                    "message" to message
-                )
-            )
-        )
+    override fun update(doc: RemoteDocument, message: String?): RemoteDocument? =
+        apiClient.savePost(doc as EsaPost, message)
 
-        return post.number?.let { number ->
-            apiClient.updatePost(number, data)
-        } ?: apiClient.createPost(data)
+    companion object {
+        const val SERVICE_NAME = "esa"
     }
 }

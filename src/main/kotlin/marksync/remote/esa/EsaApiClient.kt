@@ -12,17 +12,21 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
 import java.nio.file.Files
 
+/**
+ * Client for esa API v1
+ *
+ * https://docs.esa.io/posts/102
+ */
 class EsaApiClient(
     teamName: String,
-    accessToken: String
+    accessToken: String,
+    private val httpClient: OkHttpClient = OkHttpClient()
 ) {
     private val endpoint = "https://api.esa.io/v1/teams/$teamName"
     private val headers = mapOf(
         "Content-Type" to "application/json",
         "Authorization" to "Bearer $accessToken"
     ).toHeaders()
-
-    private val httpClient = OkHttpClient()
 
     data class EsaMember(
         val screen_name: String,
@@ -36,7 +40,7 @@ class EsaApiClient(
     /**
      * Get members.
      */
-    private fun getMembers(): List<EsaMember> {
+    fun getMembers(): List<EsaMember> {
         val request = Request.Builder()
             .url("$endpoint/members")
             .headers(headers)
@@ -53,7 +57,7 @@ class EsaApiClient(
     /**
      * Get member.
      */
-    private fun getMember(username: String): EsaMember? =
+    fun getMember(username: String): EsaMember? =
         getMembers().find { it.screen_name == username }
 
     data class EsaPostsResponse(
@@ -65,7 +69,7 @@ class EsaApiClient(
      */
     fun getPosts(username: String): List<EsaPost> {
         return getMember(username)?.let { member ->
-            (0..member.posts_count / 100).flatMap { getPosts(username, it + 1) }
+            (0..(member.posts_count - 1) / 100).flatMap { getPosts(username, it + 1) }
         } ?: listOf()
     }
 
@@ -89,7 +93,7 @@ class EsaApiClient(
     /**
      * Get post.
      */
-    fun getPost(username: String, number: Int): EsaPost? {
+    fun getPost(@Suppress("UNUSED_PARAMETER") username: String, number: Int): EsaPost? {
         val request = Request.Builder()
             .url("$endpoint/posts/$number")
             .headers(headers)
@@ -104,31 +108,30 @@ class EsaApiClient(
     }
 
     /**
-     * Create post.
+     * Save post.
      */
-    fun createPost(data: String): EsaPost? {
-        val request = Request.Builder()
-            .url("$endpoint/posts")
-            .headers(headers)
-            .post(data.toByteArray().toRequestBody("application/json".toMediaType()))
-            .build()
-        val response = httpClient.newCall(request).execute()
-        if (!response.isSuccessful) {
-            println("${response.message}: ${response.body!!.string()}")
-            return null
+    fun savePost(post: EsaPost, message: String?): EsaPost? {
+        val data = Mapper.getJson(
+            mapOf(
+                "post" to mapOf(
+                    "body_md" to post.getDocumentBody(),
+                    "category" to post.category,
+                    "wip" to post.wip,
+                    "tags" to post.tags,
+                    "name" to post.getDocumentTitle(),
+                    "message" to message
+                )
+            )
+        )
+        val builder = Request.Builder().headers(headers)
+        if (post.number == null) {
+            builder.url("$endpoint/posts")
+                .post(data.toByteArray().toRequestBody("application/json".toMediaType()))
+        } else {
+            builder.url("$endpoint/posts/${post.number}")
+                .patch(data.toByteArray().toRequestBody("application/json".toMediaType()))
         }
-        return Mapper.readJson(response.body!!.string(), EsaPost::class.java)
-    }
-
-    /**
-     * Update post.
-     */
-    fun updatePost(number: Int, data: String): EsaPost? {
-        val request = Request.Builder()
-            .url("$endpoint/posts/$number")
-            .headers(headers)
-            .patch(data.toByteArray().toRequestBody("application/json".toMediaType()))
-            .build()
+        val request = builder.build()
         val response = httpClient.newCall(request).execute()
         if (!response.isSuccessful) {
             println("${response.message}: ${response.body!!.string()}")

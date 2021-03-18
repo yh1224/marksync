@@ -21,18 +21,17 @@ import java.io.File
  * @param uploader Uploader
  */
 class ZennService(
-    serviceName: String,
+    serviceName: String = SERVICE_NAME,
     username: String,
     gitDir: String,
     gitUrl: String,
     gitBranch: String,
     gitUsername: String,
     gitPassword: String,
-    uploader: Uploader? = null
-) : RemoteService(serviceName, uploader) {
-    private val zennRepository =
+    uploader: Uploader? = null,
+    private val zennRepository: ZennRepository =
         ZennRepository(username, gitDir, gitUrl, gitBranch, gitUsername, gitPassword)
-
+) : RemoteService(serviceName, uploader) {
     private var articles: List<ZennArticle>? = null
 
     override fun getDocuments(): Map<String, ZennArticle> {
@@ -98,5 +97,9 @@ class ZennService(
 
     override fun update(doc: RemoteDocument, message: String?): RemoteDocument? {
         return zennRepository.saveArticle(doc as ZennArticle, message)
+    }
+
+    companion object {
+        const val SERVICE_NAME = "zenn"
     }
 }

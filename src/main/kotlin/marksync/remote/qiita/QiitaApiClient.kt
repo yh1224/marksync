@@ -7,16 +7,20 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 
+/**
+ * Client for Qiita API v2
+ *
+ * https://qiita.com/api/v2/docs
+ */
 class QiitaApiClient(
-    accessToken: String
+    accessToken: String,
+    private val httpClient: OkHttpClient = OkHttpClient()
 ) {
     private val endpoint = "https://qiita.com/api/v2"
     private val headers = mapOf(
         "Content-Type" to "application/json",
         "Authorization" to "Bearer $accessToken"
     ).toHeaders()
-
-    private val httpClient = OkHttpClient()
 
     data class QiitaUser(
         val id: String,
@@ -26,7 +30,7 @@ class QiitaApiClient(
     /**
      * Get user.
      */
-    private fun getUser(username: String): QiitaUser? {
+    fun getUser(username: String): QiitaUser? {
         val request = Request.Builder()
             .url("$endpoint/users/$username")
             .headers(headers)
@@ -45,7 +49,7 @@ class QiitaApiClient(
      */
     fun getItems(username: String): List<QiitaItem> {
         return getUser(username)?.let { user ->
-            (0..user.items_count / 100).flatMap { getItems(username, it + 1) }
+            (0..((user.items_count - 1) / 100)).flatMap { getItems(username, it + 1) }
         } ?: listOf()
     }
 
@@ -84,32 +88,27 @@ class QiitaApiClient(
     }
 
     /**
-     * Create item.
+     * Save item.
      */
-    fun createItem(data: String): QiitaItem? {
-        val updateRequest = Request.Builder()
-            .url("$endpoint/items")
-            .headers(headers)
-            .post(data.toByteArray().toRequestBody("application/json".toMediaType()))
-            .build()
-        val response = httpClient.newCall(updateRequest).execute()
-        if (!response.isSuccessful) {
-            println("${response.message}: ${response.body!!.string()}")
-            return null
+    fun saveItem(item: QiitaItem): QiitaItem? {
+        val data = Mapper.getJson(
+            mapOf(
+                "body" to item.getDocumentBody(),
+                "private" to item.`private`,
+                "tags" to item.tags,
+                "title" to item.getDocumentTitle()
+            )
+        )
+        val builder = Request.Builder().headers(headers)
+        if (item.id == null) {
+            builder.url("$endpoint/items")
+                .post(data.toByteArray().toRequestBody("application/json".toMediaType()))
+        } else {
+            builder.url("$endpoint/items/${item.id}")
+                .patch(data.toByteArray().toRequestBody("application/json".toMediaType()))
         }
-        return Mapper.readJson(response.body!!.string(), QiitaItem::class.java)
-    }
-
-    /**
-     * Update item.
-     */
-    fun updateItem(id: String, data: String): QiitaItem? {
-        val updateRequest = Request.Builder()
-            .url("$endpoint/items/$id")
-            .headers(headers)
-            .patch(data.toByteArray().toRequestBody("application/json".toMediaType()))
-            .build()
-        val response = httpClient.newCall(updateRequest).execute()
+        val request = builder.build()
+        val response = httpClient.newCall(request).execute()
         if (!response.isSuccessful) {
             println("${response.message}: ${response.body!!.string()}")
             return null

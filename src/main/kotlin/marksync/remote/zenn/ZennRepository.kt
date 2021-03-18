@@ -11,7 +11,9 @@ import org.eclipse.jgit.treewalk.filter.PathFilter
 import java.io.File
 import java.nio.file.Files
 
-
+/**
+ * Repository for Zenn GitHub
+ */
 class ZennRepository(
     private val username: String,
     gitDir: String,

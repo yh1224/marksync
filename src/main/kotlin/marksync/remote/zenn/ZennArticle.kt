@@ -9,9 +9,9 @@ import java.io.FileWriter
 import java.security.MessageDigest
 
 data class ZennArticle(
-    val slug: String?,
-    val url: String?,
-    val type: String = "",
+    val slug: String? = null,
+    val url: String? = null,
+    val type: String,
     val topics: List<String>,
     val published: Boolean,
     val title: String,

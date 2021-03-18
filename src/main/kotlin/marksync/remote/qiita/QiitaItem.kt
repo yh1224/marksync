@@ -9,10 +9,10 @@ import java.io.FileWriter
 import java.security.MessageDigest
 
 data class QiitaItem(
-    val id: String?,
-    val url: String?,
-    val created_at: String?,
-    val updated_at: String?,
+    val id: String? = null,
+    val url: String? = null,
+    val created_at: String? = null,
+    val updated_at: String? = null,
     val tags: List<QiitaItemTag>,
     val `private`: Boolean,
     val body: String,

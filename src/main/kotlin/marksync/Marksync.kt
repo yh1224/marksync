@@ -242,14 +242,14 @@ class Marksync {
         val service = dotenv["SERVICE"]
         val serviceName = dotenv["SERVICE_NAME"]
         return when (service) {
-            "qiita" -> {
+            QiitaService.SERVICE_NAME -> {
                 val username = dotenv["QIITA_USERNAME"]
                 val accessToken = dotenv["QIITA_ACCESS_TOKEN"]
                 if (username != null && accessToken != null) {
                     QiitaService(serviceName ?: service, username, accessToken, uploader)
                 } else null
             }
-            "esa" -> {
+            EsaService.SERVICE_NAME -> {
                 val team = dotenv["ESA_TEAM"]
                 val username = dotenv["ESA_USERNAME"]
                 val accessToken = dotenv["ESA_ACCESS_TOKEN"]
@@ -257,7 +257,7 @@ class Marksync {
                     EsaService(serviceName ?: service, team, username, accessToken, uploader)
                 } else null
             }
-            "zenn" -> {
+            ZennService.SERVICE_NAME -> {
                 val username = dotenv["ZENN_USERNAME"]
                 val gitDir = dotenv["ZENN_GIT_DIR"]
                 val gitUrl = dotenv["ZENN_GIT_URL"]

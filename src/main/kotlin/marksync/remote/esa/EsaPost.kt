@@ -8,13 +8,13 @@ import java.io.FileWriter
 import java.security.MessageDigest
 
 data class EsaPost(
-    val number: Int?,
+    val number: Int? = null,
     val url: String? = null,
-    val created_at: String?,
-    val updated_at: String?,
-    val category: String? = "",
+    val created_at: String? = null,
+    val updated_at: String? = null,
+    val category: String,
     val tags: List<String>,
-    val wip: Boolean = true,
+    val wip: Boolean,
     val body_md: String,
     val name: String,
     override val files: MutableMap<String, File> = mutableMapOf(),

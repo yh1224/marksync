@@ -17,13 +17,12 @@ import java.io.File
  * @param uploader Uploader
  */
 class QiitaService(
-    serviceName: String,
+    serviceName: String = SERVICE_NAME,
     private val username: String,
     accessToken: String,
-    uploader: Uploader? = null
+    uploader: Uploader? = null,
+    private val apiClient: QiitaApiClient = QiitaApiClient(accessToken)
 ) : RemoteService(serviceName, uploader) {
-    private val apiClient = QiitaApiClient(accessToken)
-
     private var items: List<QiitaItem>? = null
 
     override fun getDocuments(): Map<String, QiitaItem> {
@@ -90,18 +89,10 @@ class QiitaService(
         )
     }
 
-    override fun update(doc: RemoteDocument, message: String?): RemoteDocument? {
-        val item = doc as QiitaItem
-        val data = Mapper.getJson(
-            mapOf(
-                "body" to item.getDocumentBody(),
-                "private" to item.`private`,
-                "tags" to item.tags,
-                "title" to item.getDocumentTitle()
-            )
-        )
-        return item.id?.let { id ->
-            apiClient.updateItem(id, data)
-        } ?: apiClient.createItem(data)
+    override fun update(doc: RemoteDocument, message: String?): RemoteDocument? =
+        apiClient.saveItem(doc as QiitaItem)
+
+    companion object {
+        const val SERVICE_NAME = "qiita"
     }
 }
