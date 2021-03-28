@@ -6,8 +6,13 @@ Supported services are:
 
 - [Qiita](https://qiita.com)
 - [esa.io](https://esa.io)
+- [Zenn](https://zenn.dev)
 
-## How to install
+## Requisites
+
+- Java
+
+## Install
 
 ```bash
 $ npm install -g marksync
@@ -15,30 +20,35 @@ $ npm install -g marksync
 
 ### Setup
 
-Create environment configuration file. (.marksync)
+Create environment configuration file (.marksync) in top of documents directory structure.
 
 ```shell
 $ cp .marksync.example.qiita .marksync
 ```
 
-## How to use
+## Usage
 
-### Fetch all documents from service
+### Import
 
-You can fetch all documents from service.
+To import all documents from the service, run
 
 ```shell
-$ marksync fetch -o <output>
+$ marksync import -o <output>
 ```
-### Create new document
 
-Create directory and index.md inside it, and execute
+### New document
+
+Create a directory and document file (index.md) inside it, and run
 
 ```bash
 $ marksync new
 ```
 
+This will create the meta file (marksync.xxxx.yaml).
+
 ### Check modified
+
+To check if there are differences between the local file and document on the service, run
 
 ```shell
 $ marksync status
@@ -46,12 +56,16 @@ $ marksync status
 
 ### Check differ
 
+To print differences between the local file and document on the service, run
+
 ```shell
 $ marksync diff
 ```
 
-### Synchronize document to service
+### Update
 
 ```shell
 $ marksync update
 ```
+
+This will update the document on the service by the local file.
