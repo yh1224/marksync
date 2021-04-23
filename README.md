@@ -1,5 +1,7 @@
 # marksync
 
+[![npm version](https://badge.fury.io/js/marksync.png)](https://badge.fury.io/js/marksync)
+
 Synchronize Markdown documents to services.
 
 Supported services are:
