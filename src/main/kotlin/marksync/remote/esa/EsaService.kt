@@ -31,7 +31,7 @@ class EsaService(
         if (posts == null) {
             posts = apiClient.getPosts(username)
         }
-        return posts!!.map { post -> post.number!!.toString() to post }.toMap()
+        return posts!!.associateBy { post -> post.number!!.toString() }
     }
 
     override fun getDocument(id: String): RemoteDocument? =

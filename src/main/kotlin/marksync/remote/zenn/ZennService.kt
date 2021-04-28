@@ -38,7 +38,7 @@ class ZennService(
         if (articles == null) {
             articles = zennRepository.getArticles()
         }
-        return articles!!.map { it.slug!! to it }.toMap()
+        return articles!!.associateBy { it.slug!! }
     }
 
     override fun getDocument(id: String): RemoteDocument? =
@@ -95,7 +95,7 @@ class ZennService(
         )
     }
 
-    override fun update(doc: RemoteDocument, message: String?): RemoteDocument? {
+    override fun update(doc: RemoteDocument, message: String?): RemoteDocument {
         return zennRepository.saveArticle(doc as ZennArticle, message)
     }
 

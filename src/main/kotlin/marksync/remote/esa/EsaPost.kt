@@ -27,7 +27,7 @@ data class EsaPost(
     override fun getDigest(): String =
         MessageDigest.getInstance("SHA-1").run {
             listOf(
-                category ?: "",
+                category,
                 tags.joinToString(","),
                 wip.toString(),
                 getDocumentTitle(),

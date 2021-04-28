@@ -29,7 +29,7 @@ class QiitaService(
         if (items == null) {
             items = apiClient.getItems(username)
         }
-        return items!!.map { it.id!! to it }.toMap()
+        return items!!.associateBy { it.id!! }
     }
 
     override fun getDocument(id: String): RemoteDocument? =
