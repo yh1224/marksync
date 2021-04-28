@@ -97,7 +97,7 @@ class ZennRepository(
             return null
         }
 
-        val contents = file.absoluteFile.inputStream().readBytes().toString(Charsets.UTF_8).split("---\n")
+        val contents = file.absoluteFile.inputStream().readBytes().toString(Charsets.UTF_8).split("---\n", limit = 3)
         return if (contents.count() == 3) {
             val meta = Mapper.readYaml(contents[1], ZennArticleMeta::class.java)
             ZennArticle(
