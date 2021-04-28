@@ -82,7 +82,7 @@ abstract class RemoteService(
         if (docId != null) {
             val oldDoc = getDocument(docId)
             if (oldDoc == null) {
-                println("? $target: ($docId) not exists.")
+                println("? $target: ($docId) failed.")
             } else {
                 val modifiedFiles = newDoc.files.filter { (filename, file) ->
                     !(newDoc.fileInfoList.find { it.filename == filename }?.isIdenticalTo(file) ?: false)
