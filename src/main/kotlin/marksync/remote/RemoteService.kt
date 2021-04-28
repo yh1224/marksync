@@ -122,11 +122,14 @@ abstract class RemoteService(
                 // upload files
                 newDoc.files.forEach { (filename, file) ->
                     if (newDoc.fileInfoList.find { it.filename == filename }?.isIdenticalTo(file) != true) {
-                        uploader.upload(file)?.also { url ->
-                            newDoc.fileInfoList.find { it.filename == filename }?.let { newDoc.fileInfoList.remove(it) }
-                            newDoc.fileInfoList.add(FileInfo(filename, file, url))
-                            println("  ->uploaded. $filename to $url")
-                        } ?: println("  ->upload failed. $filename")
+                        val url = uploader.upload(file)
+                        if (url == null) {
+                            println("  ->upload failed. $filename")
+                            return
+                        }
+                        newDoc.fileInfoList.find { it.filename == filename }?.let { newDoc.fileInfoList.remove(it) }
+                        newDoc.fileInfoList.add(FileInfo(filename, file, url))
+                        println("  ->uploaded. $filename to $url")
                     }
                 }
             }
