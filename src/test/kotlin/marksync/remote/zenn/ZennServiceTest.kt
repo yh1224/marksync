@@ -178,6 +178,6 @@ internal class ZennServiceTest {
         val result = service.update(article1, "message")
 
         // assert
-        assertEquals("slug", result?.getDocumentId())
+        assertEquals("slug", result.getDocumentId())
     }
 }
