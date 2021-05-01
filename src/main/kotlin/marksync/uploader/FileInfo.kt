@@ -7,7 +7,7 @@ import java.security.MessageDigest
 
 data class FileInfo(
     val filename: String,
-    val digest: String,
+    val digest: String?,
     val url: String?
 ) {
     constructor(filename: String, file: File, url: String?) :

@@ -32,7 +32,11 @@ data class LocalDocument(
                      */
                 } else if (!filename.matches("#.*".toRegex())) {
                     val file = File(dir, filename)
-                    if (file.exists() && file.isFile) {
+                    if (file.name == DOCUMENT_FILENAME) {
+                        // link to another document
+                        files[filename] = file.parentFile
+                    } else if (file.exists() && file.isFile) {
+                        // regular file
                         files[filename] = file
                     } else {
                         System.err.println("warning: local file not exists: $file")

@@ -85,7 +85,7 @@ abstract class RemoteService(
                 println("? $target: ($docId) failed.")
             } else {
                 val modifiedFiles = newDoc.files.filter { (filename, file) ->
-                    !(newDoc.fileInfoList.find { it.filename == filename }?.isIdenticalTo(file) ?: false)
+                    file.isFile && !(newDoc.fileInfoList.find { it.filename == filename }?.isIdenticalTo(file) ?: false)
                 }.map { it.key }
                 val modified = newDoc.isModified(oldDoc) || modifiedFiles.isNotEmpty()
                 val drifted = expectDigest != null && oldDoc.getDigest() != expectDigest
@@ -118,16 +118,28 @@ abstract class RemoteService(
 
         // sync
         if (doSync && !checkOnly) {
-            if (uploader != null) {
-                // upload files
-                newDoc.files.forEach { (filename, file) ->
+            newDoc.files.forEach { (filename, file) ->
+                val fileInfo = newDoc.fileInfoList.find { it.filename == filename }
+                if (file.isDirectory) {
+                    val url = this.toServiceDocument(LocalDocument.of(file, serviceName), file)?.first?.getDocumentUrl()
+                    if (url != fileInfo?.url) {
+                        // link to another document
+                        if (fileInfo != null) {
+                            newDoc.fileInfoList.remove(fileInfo)
+                        }
+                        newDoc.fileInfoList.add(FileInfo(filename, null, url))
+                    }
+                } else if (file.isFile && uploader != null) {
                     if (newDoc.fileInfoList.find { it.filename == filename }?.isIdenticalTo(file) != true) {
+                        // upload file
                         val url = uploader.upload(file)
                         if (url == null) {
                             println("  ->upload failed. $filename")
                             return
                         }
-                        newDoc.fileInfoList.find { it.filename == filename }?.let { newDoc.fileInfoList.remove(it) }
+                        if (fileInfo != null) {
+                            newDoc.fileInfoList.remove(fileInfo)
+                        }
                         newDoc.fileInfoList.add(FileInfo(filename, file, url))
                         println("  ->uploaded. $filename to $url")
                     }
