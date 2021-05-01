@@ -1,5 +1,7 @@
 package marksync
 
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import okhttp3.internal.toImmutableMap
 import java.io.File
 import java.nio.file.Files
@@ -13,7 +15,8 @@ import java.nio.file.Files
 data class LocalDocument(
     private val dir: File,
     val title: String,
-    val body: String
+    val body: String,
+    private val httpClient: OkHttpClient = OkHttpClient()
 ) {
     /** files in document body */
     val files by lazy {
@@ -21,13 +24,36 @@ data class LocalDocument(
         body.split("(?<=\n)".toRegex()).forEach { line ->
             "\\[[^\\]]*\\]\\(([^)]+)\\)".toRegex().findAll(line).forEach { m ->
                 val filename = m.groups[1]?.value!!.replace("%20", " ")
-                val file = File(dir, filename)
-                if (file.exists()) {
-                    files[filename] = file
+                if (filename.matches("[a-z]+://.*".toRegex())) {
+                    /*
+                    if (!checkURL(filename)) {
+                        System.err.println("warning: not accessible publicly: $filename")
+                    }
+                     */
+                } else if (!filename.matches("#.*".toRegex())) {
+                    val file = File(dir, filename)
+                    if (file.exists() && file.isFile) {
+                        files[filename] = file
+                    } else {
+                        System.err.println("warning: local file not exists: $file")
+                    }
                 }
             }
         }
         files.toImmutableMap()
+    }
+
+    /**
+     * Check URL
+     *
+     * @param url URL
+     * @return URL is accessible or not.
+     */
+    private fun checkURL(url: String): Boolean {
+        val request = Request.Builder().url(url).get().build()
+        httpClient.newCall(request).execute().use { response ->
+            return response.isSuccessful
+        }
     }
 
     companion object {
