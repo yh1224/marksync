@@ -144,12 +144,14 @@ class Marksync {
         }
 
         // proceed targets
-        targets.forEach { target ->
-            listFiles(target, recursive)
-                .filter { it.name == DOCUMENT_FILENAME }
-                .forEach {
-                    service.sync(it.parentFile, force, message, checkOnly, showDiff)
-                }
+        val files = targets.flatMap { target ->
+            listFiles(target, recursive).filter { it.name == DOCUMENT_FILENAME }.map { it.parentFile }
+        }
+        if (files.count() >= PREFETCH_THRESHOLD) {
+            service.prefetch()
+        }
+        files.forEach {
+            service.sync(it, force, message, checkOnly, showDiff)
         }
     }
 
@@ -307,6 +309,7 @@ class Marksync {
         const val ENV_PREFIX = ".marksync"
         const val ENV_DEFAULT = "default"
         const val DOCUMENT_FILENAME = "index.md"
+        const val PREFETCH_THRESHOLD = 25
 
         @JvmStatic
         fun run(args: Array<String>) {

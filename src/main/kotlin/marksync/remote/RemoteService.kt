@@ -64,6 +64,13 @@ abstract class RemoteService(
     abstract fun update(doc: RemoteDocument, message: String?): RemoteDocument?
 
     /**
+     * Prefetch documents.
+     */
+    fun prefetch() {
+        getDocuments()
+    }
+
+    /**
      * Sync documents to service.
      *
      * @param dir Target directory
