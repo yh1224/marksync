@@ -47,12 +47,13 @@ class EsaApiClient(
             .get()
             .build()
         System.err.println("# ${request.method} ${request.url}")
-        val response = httpClient.newCall(request).execute()
-        if (!response.isSuccessful) {
-            System.err.println("${response.code} ${response.message}: ${response.body!!.string()}")
-            return listOf()
+        httpClient.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                System.err.println("${response.code} ${response.message}: ${response.body!!.string()}")
+                return listOf()
+            }
+            return Mapper.readJson(response.body!!.string(), EsaMembersResponse::class.java).members
         }
-        return Mapper.readJson(response.body!!.string(), EsaMembersResponse::class.java).members
     }
 
     /**
@@ -84,12 +85,13 @@ class EsaApiClient(
             .get()
             .build()
         System.err.println("# ${request.method} ${request.url}")
-        val response = httpClient.newCall(request).execute()
-        if (!response.isSuccessful) {
-            System.err.println("${response.code} ${response.message}: ${response.body!!.string()}")
-            return listOf()
+        httpClient.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                System.err.println("${response.code} ${response.message}: ${response.body!!.string()}")
+                return listOf()
+            }
+            return Mapper.readJson(response.body!!.string(), EsaPostsResponse::class.java).posts
         }
-        return Mapper.readJson(response.body!!.string(), EsaPostsResponse::class.java).posts
     }
 
     /**
@@ -102,12 +104,13 @@ class EsaApiClient(
             .get()
             .build()
         System.err.println("# ${request.method} ${request.url}")
-        val response = httpClient.newCall(request).execute()
-        if (!response.isSuccessful) {
-            System.err.println("${response.code} ${response.message}: ${response.body!!.string()}")
-            return null
+        httpClient.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                System.err.println("${response.code} ${response.message}: ${response.body!!.string()}")
+                return null
+            }
+            return Mapper.readJson(response.body!!.string(), EsaPost::class.java)
         }
-        return Mapper.readJson(response.body!!.string(), EsaPost::class.java)
     }
 
     /**
@@ -136,12 +139,13 @@ class EsaApiClient(
         }
         val request = builder.build()
         System.err.println("# ${request.method} ${request.url}")
-        val response = httpClient.newCall(request).execute()
-        if (!response.isSuccessful) {
-            System.err.println("${response.code} ${response.message}: ${response.body!!.string()}")
-            return null
+        httpClient.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                System.err.println("${response.code} ${response.message}: ${response.body!!.string()}")
+                return null
+            }
+            return Mapper.readJson(response.body!!.string(), EsaPost::class.java)
         }
-        return Mapper.readJson(response.body!!.string(), EsaPost::class.java)
     }
 
     data class UploadPolicies(
@@ -170,13 +174,13 @@ class EsaApiClient(
             )
             .build()
         System.err.println("# ${request.method} ${request.url}")
-        val response = httpClient.newCall(request).execute()
-        if (!response.isSuccessful) {
-            System.err.println("${response.code} ${response.message}: ${response.body!!.string()}")
-            return null
+        httpClient.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                System.err.println("${response.code} ${response.message}: ${response.body!!.string()}")
+                return null
+            }
+            return Mapper.readJson(response.body!!.string(), UploadPolicies::class.java)
         }
-        return Mapper.readJson(response.body!!.string(), UploadPolicies::class.java)
-
     }
 
     /**
@@ -187,22 +191,22 @@ class EsaApiClient(
      */
     fun uploadFile(file: File): String? {
         val contentType = Files.probeContentType(file.toPath()) ?: "application/octet-stream"
-        return getUploadPolicies(file, contentType)?.let { policies ->
-            val bodyBuilder = MultipartBody.Builder()
-            policies.form.forEach { (k, v) ->
-                bodyBuilder.addFormDataPart(k, v)
-            }
-            bodyBuilder.addFormDataPart(
-                "file",
-                file.name,
-                file.asRequestBody(contentType.toMediaType())
-            )
-            val request = Request.Builder()
-                .url(policies.attachment.endpoint)
-                .post(bodyBuilder.build())
-                .build()
-            System.err.println("# ${request.method} ${request.url}")
-            val response = httpClient.newCall(request).execute()
+        val policies = getUploadPolicies(file, contentType) ?: return null
+        val bodyBuilder = MultipartBody.Builder()
+        policies.form.forEach { (k, v) ->
+            bodyBuilder.addFormDataPart(k, v)
+        }
+        bodyBuilder.addFormDataPart(
+            "file",
+            file.name,
+            file.asRequestBody(contentType.toMediaType())
+        )
+        val request = Request.Builder()
+            .url(policies.attachment.endpoint)
+            .post(bodyBuilder.build())
+            .build()
+        System.err.println("# ${request.method} ${request.url}")
+        httpClient.newCall(request).execute().use { response ->
             if (!response.isSuccessful) {
                 System.err.println("${response.code} ${response.message}: ${response.body!!.string()}")
                 return null
