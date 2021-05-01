@@ -118,33 +118,30 @@ abstract class RemoteService(
 
         // sync
         if (doSync && !checkOnly) {
+            val newFileInfoList = arrayListOf<FileInfo>()
             newDoc.files.forEach { (filename, file) ->
                 val fileInfo = newDoc.fileInfoList.find { it.filename == filename }
                 if (file.isDirectory) {
+                    // link to another document
                     val url = this.toServiceDocument(LocalDocument.of(file, serviceName), file)?.first?.getDocumentUrl()
-                    if (url != fileInfo?.url) {
-                        // link to another document
-                        if (fileInfo != null) {
-                            newDoc.fileInfoList.remove(fileInfo)
-                        }
-                        newDoc.fileInfoList.add(FileInfo(filename, null, url))
-                    }
+                    newFileInfoList.add(FileInfo(filename, null, url))
                 } else if (file.isFile && uploader != null) {
-                    if (newDoc.fileInfoList.find { it.filename == filename }?.isIdenticalTo(file) != true) {
+                    if (fileInfo?.isIdenticalTo(file) != true) {
                         // upload file
                         val url = uploader.upload(file)
                         if (url == null) {
                             println("  ->upload failed. $filename")
                             return
                         }
-                        if (fileInfo != null) {
-                            newDoc.fileInfoList.remove(fileInfo)
-                        }
-                        newDoc.fileInfoList.add(FileInfo(filename, file, url))
+                        newFileInfoList.add(FileInfo(filename, file, url))
                         println("  ->uploaded. $filename to $url")
+                    } else {
+                        newFileInfoList.add(fileInfo)
                     }
                 }
             }
+            newDoc.fileInfoList.clear()
+            newDoc.fileInfoList.addAll(newFileInfoList)
 
             // update document
             update(newDoc, message)?.also { updatedDoc ->
