@@ -36,9 +36,10 @@ class QiitaApiClient(
             .headers(headers)
             .get()
             .build()
+        System.err.println("# ${request.method} ${request.url}")
         val response = httpClient.newCall(request).execute()
         if (!response.isSuccessful) {
-            println("${response.message}: ${response.body!!.string()}")
+            System.err.println("${response.code} ${response.message}: ${response.body!!.string()}")
             return null
         }
         return Mapper.readJson(response.body!!.string(), QiitaUser::class.java)
@@ -62,9 +63,10 @@ class QiitaApiClient(
             .headers(headers)
             .get()
             .build()
+        System.err.println("# ${request.method} ${request.url}")
         val response = httpClient.newCall(request).execute()
         if (!response.isSuccessful) {
-            println("${response.message}: ${response.body!!.string()}")
+            System.err.println("${response.code} ${response.message}: ${response.body!!.string()}")
             return listOf()
         }
         return Mapper.readJson(response.body!!.string(), Array<QiitaItem>::class.java).toList()
@@ -79,9 +81,10 @@ class QiitaApiClient(
             .headers(headers)
             .get()
             .build()
+        System.err.println("# ${request.method} ${request.url}")
         val response = httpClient.newCall(request).execute()
         if (!response.isSuccessful) {
-            println("${response.message}: ${response.body!!.string()}")
+            System.err.println("${response.code} ${response.message}: ${response.body!!.string()}")
             return null
         }
         return Mapper.readJson(response.body!!.string(), QiitaItem::class.java)
@@ -108,9 +111,10 @@ class QiitaApiClient(
                 .patch(data.toByteArray().toRequestBody("application/json".toMediaType()))
         }
         val request = builder.build()
+        System.err.println("# ${request.method} ${request.url}")
         val response = httpClient.newCall(request).execute()
         if (!response.isSuccessful) {
-            println("${response.message}: ${response.body!!.string()}")
+            System.err.println("${response.code} ${response.message}: ${response.body!!.string()}")
             return null
         }
         return Mapper.readJson(response.body!!.string(), QiitaItem::class.java)

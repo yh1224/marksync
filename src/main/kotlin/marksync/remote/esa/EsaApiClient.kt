@@ -46,9 +46,10 @@ class EsaApiClient(
             .headers(headers)
             .get()
             .build()
+        System.err.println("# ${request.method} ${request.url}")
         val response = httpClient.newCall(request).execute()
         if (!response.isSuccessful) {
-            println("${response.message}: ${response.body!!.string()}")
+            System.err.println("${response.code} ${response.message}: ${response.body!!.string()}")
             return listOf()
         }
         return Mapper.readJson(response.body!!.string(), EsaMembersResponse::class.java).members
@@ -82,9 +83,10 @@ class EsaApiClient(
             .headers(headers)
             .get()
             .build()
+        System.err.println("# ${request.method} ${request.url}")
         val response = httpClient.newCall(request).execute()
         if (!response.isSuccessful) {
-            println("${response.message}: ${response.body!!.string()}")
+            System.err.println("${response.code} ${response.message}: ${response.body!!.string()}")
             return listOf()
         }
         return Mapper.readJson(response.body!!.string(), EsaPostsResponse::class.java).posts
@@ -99,9 +101,10 @@ class EsaApiClient(
             .headers(headers)
             .get()
             .build()
+        System.err.println("# ${request.method} ${request.url}")
         val response = httpClient.newCall(request).execute()
         if (!response.isSuccessful) {
-            println("${response.message}: ${response.body!!.string()}")
+            System.err.println("${response.code} ${response.message}: ${response.body!!.string()}")
             return null
         }
         return Mapper.readJson(response.body!!.string(), EsaPost::class.java)
@@ -132,9 +135,10 @@ class EsaApiClient(
                 .patch(data.toByteArray().toRequestBody("application/json".toMediaType()))
         }
         val request = builder.build()
+        System.err.println("# ${request.method} ${request.url}")
         val response = httpClient.newCall(request).execute()
         if (!response.isSuccessful) {
-            println("${response.message}: ${response.body!!.string()}")
+            System.err.println("${response.code} ${response.message}: ${response.body!!.string()}")
             return null
         }
         return Mapper.readJson(response.body!!.string(), EsaPost::class.java)
@@ -165,9 +169,10 @@ class EsaApiClient(
                     .build()
             )
             .build()
+        System.err.println("# ${request.method} ${request.url}")
         val response = httpClient.newCall(request).execute()
         if (!response.isSuccessful) {
-            println("${response.message}: ${response.body!!.string()}")
+            System.err.println("${response.code} ${response.message}: ${response.body!!.string()}")
             return null
         }
         return Mapper.readJson(response.body!!.string(), UploadPolicies::class.java)
@@ -196,9 +201,10 @@ class EsaApiClient(
                 .url(policies.attachment.endpoint)
                 .post(bodyBuilder.build())
                 .build()
+            System.err.println("# ${request.method} ${request.url}")
             val response = httpClient.newCall(request).execute()
             if (!response.isSuccessful) {
-                println("${response.message}: ${response.body!!.string()}")
+                System.err.println("${response.code} ${response.message}: ${response.body!!.string()}")
                 return null
             }
             return policies.attachment.url
