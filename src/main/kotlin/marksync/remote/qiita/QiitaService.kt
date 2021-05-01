@@ -89,8 +89,12 @@ class QiitaService(
         )
     }
 
-    override fun update(doc: RemoteDocument, message: String?): RemoteDocument? =
-        apiClient.saveItem(doc as QiitaItem)
+    override fun update(doc: RemoteDocument, message: String?): RemoteDocument? {
+        if (message != null) {
+            System.err.println("warning: update message ignored: $message")
+        }
+        return apiClient.saveItem(doc as QiitaItem)
+    }
 
     companion object {
         const val SERVICE_NAME = "qiita"
