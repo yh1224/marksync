@@ -9,7 +9,7 @@ import java.io.File
  * Remote service
  */
 abstract class RemoteService(
-    serviceName: String,
+    private val serviceName: String,
     val uploader: Uploader?
 ) {
     val metaFilename = "$METAFILE_PREFIX.$serviceName.yml"
@@ -74,7 +74,7 @@ abstract class RemoteService(
      */
     fun sync(dir: File, force: Boolean, message: String?, checkOnly: Boolean, showDiff: Boolean) {
         val target = dir.path
-        val (newDoc, expectDigest) = this.toServiceDocument(LocalDocument.of(dir), dir) ?: return
+        val (newDoc, expectDigest) = this.toServiceDocument(LocalDocument.of(dir, serviceName), dir) ?: return
 
         // check
         var doSync = false

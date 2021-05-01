@@ -58,14 +58,27 @@ data class LocalDocument(
 
     companion object {
         const val DOCUMENT_FILENAME = "index.md"
+        private const val HEADER_FILENAME = "head.%s.md"
+        private const val FOOTER_FILENAME = "foot.%s.md"
 
         /**
          * Create document from directory.
          *
          * @param dir Document directory
+         * @param name name for header/footer
          * @return Document
          */
-        fun of(dir: File): LocalDocument {
+        fun of(dir: File, name: String? = null): LocalDocument {
+            val header = name?.let {
+                val f = File(dir, HEADER_FILENAME.format(name))
+                if (f.exists()) String(Files.readAllBytes(f.toPath())) + "\n" else ""
+            } ?: ""
+            val footer = name?.let {
+                val f = File(dir, FOOTER_FILENAME.format(name))
+                if (f.exists()) "\n" + String(Files.readAllBytes(f.toPath())) else ""
+            } ?: ""
+
+            // title と body に分離
             var title: String? = null
             val content = String(Files.readAllBytes(File(dir, DOCUMENT_FILENAME).toPath()))
             val bodyBuf = StringBuilder()
@@ -76,11 +89,9 @@ data class LocalDocument(
                     title = line.replaceFirst("^#\\s+".toRegex(), "").trim()
                 }
             }
-            return LocalDocument(
-                dir,
-                title ?: "",
-                bodyBuf.toString().replaceFirst("[\\r\\n]+".toRegex(), "")
-            )
+            val body = bodyBuf.toString().replaceFirst("[\\r\\n]+".toRegex(), "")
+
+            return LocalDocument(dir, title ?: "", header + body + footer)
         }
     }
 }
