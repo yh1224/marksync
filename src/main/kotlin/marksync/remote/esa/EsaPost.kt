@@ -36,7 +36,7 @@ data class EsaPost(
             Hex.encodeHexString(digest())
         }
 
-    override fun getDocumentTitle(): String = name.replace("/".toRegex(), "")
+    override fun getDocumentTitle(): String = name.replace('/', '∕')
 
     override fun getDocumentBody(): String {
         val newBody = StringBuilder()
