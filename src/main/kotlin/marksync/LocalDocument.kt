@@ -31,7 +31,7 @@ data class LocalDocument(
                     }
                      */
                 } else if (!filename.matches("#.*".toRegex())) {
-                    val file = File(dir, filename)
+                    val file = if (filename.startsWith("/")) File(filename) else File(dir, filename)
                     if (file.name == DOCUMENT_FILENAME) {
                         // link to another document
                         files[filename] = file.parentFile
