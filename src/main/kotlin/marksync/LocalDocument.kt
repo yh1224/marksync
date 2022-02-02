@@ -86,9 +86,12 @@ data class LocalDocument(
             var title: String? = null
             val content = String(Files.readAllBytes(File(dir, DOCUMENT_FILENAME).toPath()))
             val bodyBuf = StringBuilder()
+            var comment = false
             content.split("(?<=\n)".toRegex()).forEach { line ->
                 if (title != null) {
-                    bodyBuf.append(line)
+                    if (line.trim() == "<!--" || line.trim() == "<!---") comment = true
+                    if (!comment) bodyBuf.append(line)
+                    if (line.trim() == "-->") comment = false
                 } else if ("^#\\s".toRegex().find(line) != null) {
                     title = line.replaceFirst("^#\\s+".toRegex(), "").trim()
                 }
