@@ -146,7 +146,7 @@ class Marksync {
         // proceed targets
         val files = targets.flatMap { target ->
             listFiles(target, recursive).filter { it.name == DOCUMENT_FILENAME }.map { it.parentFile }
-        }
+        }.sorted()
         if (files.count() >= PREFETCH_THRESHOLD) {
             service.prefetch()
         }
