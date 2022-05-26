@@ -12,7 +12,7 @@ data class EsaPost(
     val url: String? = null,
     val created_at: String? = null,
     val updated_at: String? = null,
-    val category: String,
+    val category: String? = null,
     val tags: List<String>,
     val wip: Boolean,
     val body_md: String,
@@ -27,7 +27,7 @@ data class EsaPost(
     override fun getDigest(): String =
         MessageDigest.getInstance("SHA-1").run {
             listOf(
-                category,
+                category ?: "",
                 tags.joinToString(","),
                 wip.toString(),
                 getDocumentTitle(),
