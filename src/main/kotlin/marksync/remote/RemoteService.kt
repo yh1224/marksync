@@ -80,7 +80,7 @@ abstract class RemoteService(
      * @param showDiff Show diff
      */
     fun sync(dir: File, force: Boolean, message: String?, checkOnly: Boolean, showDiff: Boolean) {
-        val target = dir.path
+        val target = dir.path.replace("./", "")
         val (newDoc, expectDigest) = this.toServiceDocument(LocalDocument.of(dir, serviceName), dir) ?: return
 
         // check
