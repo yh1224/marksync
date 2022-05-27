@@ -100,6 +100,7 @@ abstract class RemoteDocument {
             UnifiedDiffUtils.generateUnifiedDiff(
                 "original", "modified", valueOf(source), patch, 2
             ).drop(2).forEach { println("  $it") }
+            println("  ")
         }
         return patch.deltas.isNotEmpty()
     }
