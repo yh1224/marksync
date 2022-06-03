@@ -20,8 +20,32 @@ $ npm install -g marksync
 
 Create environment configuration file (.marksync) in top of documents directory structure.
 
-```shell
-$ cp .marksync.example.qiita .marksync
+#### Qiita
+
+```
+# Qiita
+SERVICE=qiita
+QIITA_USERNAME=
+QIITA_ACCESS_TOKEN=
+
+# S3 uploader
+#UPLOADER=s3
+#S3_BUCKET_NAME=
+#S3_PREFIX=
+#S3_BASE_URL=
+#AWS_PROFILE=
+#AWS_ACCESS_KEY_ID=
+#AWS_SECRET_ACCESS_KEY=
+```
+
+#### esa.io
+
+```
+# esa
+SERVICE=esa
+ESA_TEAM=
+ESA_USERNAME=
+ESA_ACCESS_TOKEN=
 ```
 
 ## Usage
