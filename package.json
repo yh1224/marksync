@@ -1,6 +1,6 @@
 {
   "name": "marksync",
-  "version": "3.0.0",
+  "version": "SNAPSHOT",
   "description": "Synchronize Markdown documents to services.",
   "main": "dist/index.js",
   "preferGlobal": true,
