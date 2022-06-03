@@ -1,0 +1,5 @@
+!.gitignore
+!.marksync.example.*
+/dist/
+/node_modules/
+/tmp/
