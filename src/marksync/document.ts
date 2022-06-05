@@ -78,6 +78,27 @@ export class LocalDocument {
     }
 
     /**
+     * Convert body
+     *
+     * @param body
+     * @return converted body
+     */
+    private static convertBody(body: string): string {
+        let bodyBuf = "";
+        let comment = false;
+        for (const line of body.split(/(?<=\n)/)) {
+            // コメント削除
+            if (line.trim() == "<!--" || line.trim() == "<!---") comment = true;
+            if (comment) {
+                if (line.trim() == "-->") comment = false;
+                continue;
+            }
+            bodyBuf += line;
+        }
+        return bodyBuf.replace(/[\r\n]+/, "");
+    }
+
+    /**
      * Create document from directory.
      *
      * @param dirPath Document directory path
@@ -100,19 +121,13 @@ export class LocalDocument {
 
         // title と body に分離
         let title = "";
-        const content = fs.readFileSync(path.join(dirPath, LocalDocument.DOCUMENT_FILENAME)).toString();
-        let bodyBuf = "";
-        let comment = false;
-        for (const line of content.split(/(?<=\n)/)) {
-            if (title !== "") {
-                if (line.trim() == "<!--" || line.trim() == "<!---") comment = true;
-                if (!comment) bodyBuf += line;
-                if (line.trim() == "-->") comment = false;
-            } else if (line.match(/^#\s/)) {
-                title = line.replace(/^#\s+/, "").trim();
-            }
+        let body = fs.readFileSync(path.join(dirPath, LocalDocument.DOCUMENT_FILENAME)).toString();
+        const lines = body.split(/(?<=\n)/);
+        if (lines[0].match(/^#/)) {
+            title = lines.shift()!.replace(/^#\s*/, "").trim();
+            body = lines.join("");
         }
-        const body = bodyBuf.replace(/[\r\n]+/, "");
-        return new LocalDocument(dirPath, title, header + body + footer);
+
+        return new LocalDocument(dirPath, title, header + this.convertBody(body) + footer);
     }
 }
