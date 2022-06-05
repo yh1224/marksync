@@ -93,6 +93,19 @@ export class LocalDocument {
                 if (line.trim() == "-->") comment = false;
                 continue;
             }
+
+            // @@include
+            const includeMatch = /^@@include\[[^\]]*\]\(([^)]+)\)[\r\n]*$/.exec(line);
+            if (includeMatch) {
+                const filePath = includeMatch[1].replace(/%20/g, " ");
+                if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+                    bodyBuf += fs.readFileSync(filePath);
+                } else {
+                    process.stderr.write(`warning: local file not exists: ${filePath}\n`);
+                }
+                continue;
+            }
+
             bodyBuf += line;
         }
         bodyBuf = bodyBuf.replace(/^[\r\n]+/, "");
