@@ -275,8 +275,11 @@ export class EsaApiClient {
                 knownLength: fs.statSync(filePath).size,
                 contentType,
             });
-            await axios.post(url, data,
-                {headers: {...data.getHeaders(), "Content-Length": data.getLengthSync()}});
+            await axios.post(url, data, {
+                headers: {...data.getHeaders(), "Content-Length": data.getLengthSync()},
+                maxContentLength: Infinity,
+                maxBodyLength: Infinity,
+            });
             return policies.attachment.url;
         } catch (e) {
             if (!axios.isAxiosError(e)) throw e;
