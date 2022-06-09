@@ -108,8 +108,12 @@ export class EsaApiClient {
             return (new EsaMembersResponse(res.data as IEsaMembersResponse)).members;
         } catch (e) {
             if (!axios.isAxiosError(e)) throw e;
-            const response = e.response!;
-            process.stderr.write(`ERROR: ${response.status} ${response.statusText}: ${JSON.stringify(response.data)}\n`);
+            const response = e.response;
+            if (response) {
+                process.stderr.write(`ERROR: ${response.status} ${response.statusText}: ${JSON.stringify(response.data)}\n`);
+            } else {
+                process.stderr.write(`ERROR: ${e}\n`);
+            }
             return null;
         }
     }
@@ -151,8 +155,12 @@ export class EsaApiClient {
             return (new EsaPostsResponse(res.data as IEsaPostsResponse)).posts;
         } catch (e) {
             if (!axios.isAxiosError(e)) throw e;
-            const response = e.response!;
-            process.stderr.write(`ERROR: ${response.status} ${response.statusText}: ${JSON.stringify(response.data)}\n`);
+            const response = e.response;
+            if (response) {
+                process.stderr.write(`ERROR: ${response.status} ${response.statusText}: ${JSON.stringify(response.data)}\n`);
+            } else {
+                process.stderr.write(`ERROR: ${e}\n`);
+            }
             return null;
         }
     }
@@ -168,8 +176,12 @@ export class EsaApiClient {
             return new EsaPost(res.data as IEsaPost);
         } catch (e) {
             if (!axios.isAxiosError(e)) throw e;
-            const response = e.response!;
-            process.stderr.write(`ERROR: ${response.status} ${response.statusText}: ${JSON.stringify(response.data)}\n`);
+            const response = e.response;
+            if (response) {
+                process.stderr.write(`ERROR: ${response.status} ${response.statusText}: ${JSON.stringify(response.data)}\n`);
+            } else {
+                process.stderr.write(`ERROR: ${e}\n`);
+            }
             return null;
         }
     }
@@ -203,8 +215,12 @@ export class EsaApiClient {
             return new EsaPost(res.data as IEsaPost);
         } catch (e) {
             if (!axios.isAxiosError(e)) throw e;
-            const response = e.response!;
-            process.stderr.write(`ERROR: ${response.status} ${response.statusText}: ${JSON.stringify(response.data)}\n`);
+            const response = e.response;
+            if (response) {
+                process.stderr.write(`ERROR: ${response.status} ${response.statusText}: ${JSON.stringify(response.data)}\n`);
+            } else {
+                process.stderr.write(`ERROR: ${e}\n`);
+            }
             return null;
         }
     }
@@ -224,8 +240,12 @@ export class EsaApiClient {
             return new UploadPolicies(res.data as IUploadPolicies);
         } catch (e) {
             if (!axios.isAxiosError(e)) throw e;
-            const response = e.response!;
-            process.stderr.write(`ERROR: ${response.status} ${response.statusText}: ${JSON.stringify(response.data)}\n`);
+            const response = e.response;
+            if (response) {
+                process.stderr.write(`ERROR: ${response.status} ${response.statusText}: ${JSON.stringify(response.data)}\n`);
+            } else {
+                process.stderr.write(`ERROR: ${e}\n`);
+            }
             return null;
         }
     }
@@ -260,8 +280,12 @@ export class EsaApiClient {
             return policies.attachment.url;
         } catch (e) {
             if (!axios.isAxiosError(e)) throw e;
-            const response = e.response!;
-            process.stderr.write(`ERROR: ${response.status} ${response.statusText}: ${JSON.stringify(response.data)}\n`);
+            const response = e.response;
+            if (response) {
+                process.stderr.write(`ERROR: ${response.status} ${response.statusText}: ${JSON.stringify(response.data)}\n`);
+            } else {
+                process.stderr.write(`ERROR: ${e}\n`);
+            }
             return null;
         }
     }

@@ -46,8 +46,12 @@ export class QiitaApiClient {
             return new QiitaUser(res.data as IQiitaUser);
         } catch (e) {
             if (!axios.isAxiosError(e)) throw e;
-            const response = e.response!;
-            process.stderr.write(`ERROR: ${response.status} ${response.statusText}: ${JSON.stringify(response.data)}\n`);
+            const response = e.response;
+            if (response) {
+                process.stderr.write(`ERROR: ${response.status} ${response.statusText}: ${JSON.stringify(response.data)}\n`);
+            } else {
+                process.stderr.write(`ERROR: ${e}\n`);
+            }
             return null;
         }
     }
@@ -75,8 +79,12 @@ export class QiitaApiClient {
             return (res.data as IQiitaItem[]).map(it => new QiitaItem(it));
         } catch (e) {
             if (!axios.isAxiosError(e)) throw e;
-            const response = e.response!;
-            process.stderr.write(`ERROR: ${response.status} ${response.statusText}: ${JSON.stringify(response.data)}\n`);
+            const response = e.response;
+            if (response) {
+                process.stderr.write(`ERROR: ${response.status} ${response.statusText}: ${JSON.stringify(response.data)}\n`);
+            } else {
+                process.stderr.write(`ERROR: ${e}\n`);
+            }
             return [];
         }
     }
@@ -92,8 +100,12 @@ export class QiitaApiClient {
             return new QiitaItem(res.data as IQiitaItem);
         } catch (e) {
             if (!axios.isAxiosError(e)) throw e;
-            const response = e.response!;
-            process.stderr.write(`ERROR: ${response.status} ${response.statusText}: ${JSON.stringify(response.data)}\n`);
+            const response = e.response;
+            if (response) {
+                process.stderr.write(`ERROR: ${response.status} ${response.statusText}: ${JSON.stringify(response.data)}\n`);
+            } else {
+                process.stderr.write(`ERROR: ${e}\n`);
+            }
             return null;
         }
     }
@@ -123,8 +135,12 @@ export class QiitaApiClient {
             return new QiitaItem(res.data as IQiitaItem);
         } catch (e) {
             if (!axios.isAxiosError(e)) throw e;
-            const response = e.response!;
-            process.stderr.write(`ERROR: ${response.status} ${response.statusText}: ${JSON.stringify(response.data)}\n`);
+            const response = e.response;
+            if (response) {
+                process.stderr.write(`ERROR: ${response.status} ${response.statusText}: ${JSON.stringify(response.data)}\n`);
+            } else {
+                process.stderr.write(`ERROR: ${e}\n`);
+            }
             return null;
         }
     }
