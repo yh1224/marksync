@@ -19,10 +19,10 @@ export class FileInfo {
         this.url = data.url;
     }
 
-    static of(filePath: string, url: string): FileInfo {
+    static of(filename: string, url: string): FileInfo {
         return new FileInfo({
-            filename: path.basename(filePath),
-            digest: FileInfo.sha1(filePath),
+            filename: filename,
+            digest: FileInfo.sha1(filename),
             url: url,
         });
     }
