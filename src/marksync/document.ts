@@ -95,7 +95,9 @@ export class LocalDocument {
             }
             bodyBuf += line;
         }
-        return bodyBuf.replace(/[\r\n]+/, "");
+        bodyBuf = bodyBuf.replace(/^[\r\n]+/, "");
+        bodyBuf = bodyBuf.replace(/(\r?\n)[\r\n]+$/, "$1");
+        return bodyBuf
     }
 
     /**
