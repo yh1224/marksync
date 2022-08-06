@@ -154,7 +154,7 @@ export abstract class RemoteService {
                             process.stdout.write(`  ->upload failed. ${filename}\n`);
                             return;
                         }
-                        newFileInfoList.push(FileInfo.of(filePath, url));
+                        newFileInfoList.push(FileInfo.of(filename, filePath, url));
                         process.stdout.write(`  ->uploaded. ${filename} to ${url}\n`);
                     } else {
                         newFileInfoList.push(fileInfo);
