@@ -18,6 +18,9 @@
   "files": [
     "dist"
   ],
+  "engines": {
+    "node": ">=14.0.0"
+  },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.88.0",
     "argparse": "^2.0.1",
