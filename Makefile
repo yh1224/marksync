@@ -24,7 +24,7 @@ publish:
 ifeq ($(VERSION),)
 	$(error "VERSION required.")
 endif
-	sed -i.bak "s/SNAPSHOT/$(VERSION)/" package.json
+	sed -i.bak "s/0.0.0/$(VERSION)/" package.json
 	grep "\"version\": \"$(VERSION)\"," package.json
 	@$(MAKE) clean build test
 	@echo "Publishing version: $(VERSION)"
