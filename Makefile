@@ -10,7 +10,7 @@ test:
 
 .PHONY: node_modules
 node_modules:
-	npm install
+	npm ci
 
 .PHONY: clean
 clean:
