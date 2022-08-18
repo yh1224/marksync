@@ -32,7 +32,7 @@
     "mermaid": "^9.1.1",
     "mime-types": "^2.1.35",
     "node-plantuml": "^0.9.0",
-    "nodegit": "^0.27.0",
+    "nodegit": "^0.28.0-alpha.18",
     "npm": "^8.10.0",
     "typescript": "^4.6.4",
     "uuid": "^8.3.2"
