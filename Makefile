@@ -14,10 +14,9 @@ node_modules:
 
 .PHONY: clean
 clean:
-	mkdir -p node_modules
-	rm -fr dist node_modules/*
+	rm -fr node_modules
 
- VERSION ?=
+VERSION ?=
 
 .PHONY: publish
 publish:
