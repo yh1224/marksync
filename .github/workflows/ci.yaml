@@ -36,3 +36,8 @@ jobs:
       - run: npm ci
       - run: npm run build --if-present
       - run: npm test
+
+      - name: Notify
+        uses: slackapi/slack-github-action@v1.21.0
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
