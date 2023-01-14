@@ -2,7 +2,7 @@ import * as fs from "fs";
 import * as mime from "mime-types";
 import * as path from "path";
 import * as uuid from "uuid";
-import {PutObjectCommand, S3Client, S3ServiceException} from "@aws-sdk/client-s3";
+import {GetBucketOwnershipControlsCommand, PutObjectCommand, S3Client, S3ServiceException} from "@aws-sdk/client-s3";
 import {PutObjectCommandInput} from "@aws-sdk/client-s3/dist-types/commands/PutObjectCommand";
 import {Uploader} from "./uploader";
 
@@ -32,11 +32,16 @@ export class S3Uploader implements Uploader {
         const contentType = mime.lookup(filePath);
 
         try {
+            const res = await this.s3Client.send(new GetBucketOwnershipControlsCommand({
+                Bucket: this.bucketName,
+            }));
             const input: PutObjectCommandInput = {
                 Bucket: this.bucketName,
                 Key: objectKey,
                 Body: fs.readFileSync(filePath),
-                ACL: "public-read",
+            }
+            if (res.OwnershipControls?.Rules?.[0].ObjectOwnership !== "BucketOwnerEnforced") {
+                input.ACL = "public-read";
             }
             if (contentType) {
                 input.ContentType = contentType;
