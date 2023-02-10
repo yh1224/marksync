@@ -17,7 +17,7 @@ export interface IZennArticle {
     readonly fileInfoList?: IFileInfo[];
 }
 
-export class ZennArticle extends RemoteDocument {
+export class ZennArticle extends RemoteDocument implements IZennArticle {
     public readonly slug?: string;
     public readonly url?: string;
     public readonly type: string = "";

@@ -17,7 +17,7 @@ export interface IEsaPost {
     readonly fileInfoList?: IFileInfo[];
 }
 
-export class EsaPost extends RemoteDocument {
+export class EsaPost extends RemoteDocument implements IEsaPost {
     public readonly number?: number;
     public readonly url?: string;
     public readonly created_at?: string;

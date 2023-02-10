@@ -70,8 +70,7 @@ describe("QiitaService", () => {
 
         expect(fs.readFileSync(path.join(dirPath, "marksync.qiita.yml")).toString()).toBe(
             "tags: []\n" +
-            "private: true\n" +
-            "files: []\n"
+            "private: true\n"
         );
     })
 
@@ -82,13 +81,13 @@ describe("QiitaService", () => {
         await service.saveMeta(item1, dirPath);
 
         expect(fs.readFileSync(path.join(dirPath, "marksync.qiita.yml")).toString()).toBe(
+            "digest: \"9aa6875ffb8c8aca1d6cd74ebb31ef0e282a19dc\"\n" +
+            "files: []\n" +
             "tags:\n" +
             "  - versions: []\n" +
             "    name: \"tag1\"\n" +
             "private: false\n" +
-            "files: []\n" +
-            "id: \"id1\"\n" +
-            "digest: \"9aa6875ffb8c8aca1d6cd74ebb31ef0e282a19dc\"\n"
+            "id: \"id1\"\n"
         );
     })
 

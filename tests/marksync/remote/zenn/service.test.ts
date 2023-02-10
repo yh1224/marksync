@@ -72,8 +72,7 @@ describe("ZennService", () => {
         expect(fs.readFileSync(path.join(dirPath, "marksync.zenn.yml")).toString()).toBe(
             "type: \"tech\"\n" +
             "topics: []\n" +
-            "published: false\n" +
-            "files: []\n"
+            "published: false\n"
         )
     })
 
@@ -84,13 +83,13 @@ describe("ZennService", () => {
         await service.saveMeta(article1, dirPath);
 
         expect(fs.readFileSync(path.join(dirPath, "marksync.zenn.yml")).toString()).toBe(
+            "digest: \"c0d3b2d0cbcfed2146f89c4f6549e67383d36ca7\"\n" +
+            "files: []\n" +
             "type: \"type1\"\n" +
             "topics:\n" +
             "  - \"topic1\"\n" +
             "published: false\n" +
-            "files: []\n" +
-            "slug: \"slug1\"\n" +
-            "digest: \"c0d3b2d0cbcfed2146f89c4f6549e67383d36ca7\"\n"
+            "slug: \"slug1\"\n"
         )
     })
 

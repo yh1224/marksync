@@ -71,8 +71,7 @@ describe("EsaService", () => {
 
         expect(fs.readFileSync(path.join(dirPath, "marksync.esa.yml")).toString()).toBe(
             "tags: []\n" +
-            "wip: true\n" +
-            "files: []\n"
+            "wip: true\n"
         );
     })
 
@@ -83,12 +82,12 @@ describe("EsaService", () => {
         await service.saveMeta(post1, dirPath);
 
         expect(fs.readFileSync(path.join(dirPath, "marksync.esa.yml")).toString()).toBe(
+            "digest: \"59a685e19c0d23484be9df90d6b970beb2648f7c\"\n" +
+            "files: []\n" +
             "tags:\n" +
             "  - \"tag1\"\n" +
             "wip: false\n" +
-            "files: []\n" +
             "number: 1\n" +
-            "digest: \"59a685e19c0d23484be9df90d6b970beb2648f7c\"\n" +
             "category: \"category1\"\n"
         );
     })

@@ -1,33 +1,30 @@
-import {FileInfo, IFileInfo} from "../../uploader/file";
+import {FileInfo} from "../../uploader/file";
+import {IRemoteMeta, RemoteMeta} from "../meta";
 
-export interface IZennDocMeta {
+export interface IZennDocMeta extends IRemoteMeta {
     readonly slug?: string;
     readonly url?: string;
-    readonly digest?: string;
     readonly type?: string;
     readonly topics?: string[];
     readonly published?: boolean;
-    readonly files?: IFileInfo[];
 }
 
-export class ZennDocMeta {
+export class ZennDocMeta extends RemoteMeta implements IZennDocMeta {
     public readonly slug?: string;
     public readonly url?: string;
     public readonly digest?: string;
     public readonly type: string = "tech";
     public readonly topics: string[] = [];
     public readonly published: boolean = false;
-    public readonly files: FileInfo[] = [];
 
     constructor(data?: IZennDocMeta) {
+        super(data);
         if (data !== undefined) {
             this.slug = data.slug;
             this.url = data.url;
-            this.digest = data.digest;
             if (data.type !== undefined) this.type = data.type;
             if (data.topics !== undefined) this.topics = data.topics;
             if (data.published !== undefined) this.published = data.published;
-            if (data.files !== undefined) this.files = data.files.map(it => new FileInfo(it));
         }
     }
 }
