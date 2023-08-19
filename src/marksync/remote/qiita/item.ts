@@ -92,6 +92,7 @@ export class QiitaItem extends RemoteDocument implements IQiitaItem {
                 }
                 newBody += `![](${pngFileName})\n`;
                 fUml = false;
+                umlBody = "";
             } else if (fUml) {
                 umlBody += line;
             } else {
