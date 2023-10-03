@@ -29,13 +29,13 @@ export class LocalDocument {
             for (const line of this.body.split(/(?<=\n)/)) {
                 for (const m of line.matchAll(/\[[^\]]*\]\(([^)]+)\)/g)) {
                     const filename = m[1].replace(/%20/g, " ");
-                    if (filename.match(/[a-z]+:\/\/.*/)) {
+                    if (filename.match(/^[a-z]+:\/\//)) {
                         /*
                         if (!this.checkURL(filename)) {
                             process.stderr.write(`warning: not accessible publicly: ${filename}\n`);
                         }
                         */
-                    } else if (!filename.match(/#.*/)) {
+                    } else if (!filename.match(/^#/)) {
                         let filePath;
                         if (filename.startsWith("/")) {
                             filePath = filename;
