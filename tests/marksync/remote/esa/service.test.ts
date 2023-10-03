@@ -1,6 +1,6 @@
-import fs from "fs";
-import os from "os";
-import path from "path";
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
 import {EsaApiClient} from "../../../../src/marksync/remote/esa/api";
 import {EsaPost} from "../../../../src/marksync/remote/esa/post";
 import {EsaService} from "../../../../src/marksync/remote/esa/service";

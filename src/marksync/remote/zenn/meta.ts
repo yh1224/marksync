@@ -1,4 +1,3 @@
-import {FileInfo} from "../../uploader/file";
 import {IRemoteMeta, RemoteMeta} from "../meta";
 
 export interface IZennDocMeta extends IRemoteMeta {

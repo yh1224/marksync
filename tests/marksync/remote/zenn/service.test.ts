@@ -1,6 +1,6 @@
-import fs from "fs";
-import os from "os";
-import path from "path";
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
 import {ZennArticle} from "../../../../src/marksync/remote/zenn/article";
 import {ZennRepository} from "../../../../src/marksync/remote/zenn/repository";
 import {ZennService} from "../../../../src/marksync/remote/zenn/service";
