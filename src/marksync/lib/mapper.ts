@@ -14,6 +14,10 @@ export class Mapper {
         return yaml.load(str) as T;
     }
 
+    static toYaml<T>(obj: T): string {
+        return yaml.dump(obj, {quotingType: "\"", forceQuotes: true});
+    }
+
     static readYamlFile<T>(filePath: string): T {
         return yaml.load(fs.readFileSync(filePath).toString()) as T;
     }

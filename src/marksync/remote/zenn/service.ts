@@ -52,6 +52,7 @@ export class ZennService extends RemoteService {
                     type: articleMeta.type,
                     topics: articleMeta.topics,
                     published: articleMeta.published,
+                    publication_name: articleMeta.publication_name,
                     title: doc.title,
                     body: doc.body,
                     files: doc.getFiles(),
@@ -87,6 +88,7 @@ export class ZennService extends RemoteService {
             type: article.type,
             topics: article.topics,
             published: article.published,
+            publication_name: article.publication_name,
             files: files,
         }));
     }

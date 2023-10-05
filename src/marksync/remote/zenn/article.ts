@@ -11,6 +11,7 @@ export interface IZennArticle {
     readonly type?: string;
     readonly topics?: string[];
     readonly published?: boolean;
+    readonly publication_name?: string;
     readonly title?: string;
     readonly body?: string;
     readonly files?: { [name: string]: string };
@@ -23,6 +24,7 @@ export class ZennArticle extends RemoteDocument implements IZennArticle {
     public readonly type: string = "";
     public readonly topics: string[] = [];
     public readonly published: boolean = false;
+    public readonly publication_name?: string;
     public readonly title: string = "";
     public readonly body: string = "";
     public readonly files: { [name: string]: string } = {};
@@ -36,6 +38,7 @@ export class ZennArticle extends RemoteDocument implements IZennArticle {
             if (data.type !== undefined) this.type = data.type;
             if (data.topics !== undefined) this.topics = data.topics;
             if (data.published !== undefined) this.published = data.published;
+            if (data.publication_name !== undefined) this.publication_name = data.publication_name;
             if (data.title !== undefined) this.title = data.title;
             if (data.body !== undefined) this.body = data.body;
             if (data.files !== undefined) this.files = data.files;
@@ -109,6 +112,7 @@ export class ZennArticle extends RemoteDocument implements IZennArticle {
             this.diff("type", oldArticle.type, this.type, printDiff),
             this.diff("topics", oldArticle.topics, this.topics, printDiff),
             this.diff("published", oldArticle.published, this.published, printDiff),
+            this.diff("publication_name", oldArticle.publication_name, this.publication_name, printDiff),
             this.diff("title", oldArticle.title, this.getDocumentTitle(), printDiff),
             this.diff("body", oldArticle.body, await this.getDocumentBody(), printDiff),
         ].includes(true);

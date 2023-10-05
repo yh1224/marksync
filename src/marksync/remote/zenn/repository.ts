@@ -9,6 +9,7 @@ class IZennArticleMeta {
     readonly type?: string;
     readonly topics?: string[];
     readonly published?: boolean;
+    readonly publication_name?: string;
     readonly title?: string;
 }
 
@@ -16,6 +17,7 @@ class ZennArticleMeta {
     public readonly type: string = "";
     public readonly topics: string[] = [];
     public readonly published: boolean = false;
+    public readonly publication_name?: string;
     public readonly title: string = "";
 
     constructor(data: IZennArticleMeta) {
@@ -159,6 +161,7 @@ export class ZennRepository {
             type: meta.type,
             topics: meta.topics,
             published: meta.published,
+            publication_name: meta.publication_name,
             title: meta.title,
             body: body,
         });
@@ -189,12 +192,19 @@ export class ZennRepository {
             fs.mkdirSync(path.dirname(filePath), {recursive: true});
         }
 
-        const content = `---
-title: "${article.title}"
-type: "${article.type}"
-topics: [${article.topics.map(it => `"${it}"`).join(", ")}]
-published: ${article.published}
----` + "\n" + await article.getDocumentBody();
+        const frontMatter: { [name: string]: any } = {
+            title: article.title,
+            type: article.type,
+            topics: article.topics,
+            published: article.published,
+        };
+        if (article.publication_name) {
+            frontMatter.publication_name = article.publication_name;
+        }
+        const content = "---\n" +
+            Mapper.toYaml(frontMatter) +
+            "---\n" +
+            await article.getDocumentBody();
         fs.writeFileSync(filePath, content);
 
         try {
