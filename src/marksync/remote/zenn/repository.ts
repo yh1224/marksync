@@ -140,7 +140,7 @@ export class ZennRepository {
         }
         await repos.checkoutBranch(this.gitBranch, {
             targetDirectory: this.workDir,
-            paths: [fileName],
+            paths: [path.dirname(fileName)],
         });
         if (!fs.existsSync(filePath)) {
             process.stderr.write(`ERROR: failed to get article ${slug}. (not exists)\n`);
