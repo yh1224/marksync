@@ -140,7 +140,7 @@ export class ZennRepository {
         }
         await repos.checkoutBranch(this.gitBranch, {
             targetDirectory: this.workDir,
-            paths: [path.dirname(fileName)],
+            paths: [fileName],
         });
         if (!fs.existsSync(filePath)) {
             process.stderr.write(`ERROR: failed to get article ${slug}. (not exists)\n`);
@@ -182,7 +182,7 @@ export class ZennRepository {
         try {
             await repos.checkoutBranch(this.gitBranch, {
                 targetDirectory: this.workDir,
-                paths: [fileName],
+                // paths: [fileName],
             });
         } catch (e) {
             process.stderr.write(`${e}\n`);
