@@ -2,15 +2,15 @@ all: build
 
 .PHONY: build
 build: node_modules
-	npm run build
+	pnpm run build
 
 .PHONY: test
 test:
-	npm run test
+	pnpm run test
 
 .PHONY: node_modules
 node_modules:
-	npm ci
+	pnpm install --frozen-lockfile
 
 .PHONY: clean
 clean:
@@ -27,4 +27,4 @@ endif
 	grep "\"version\": \"$(VERSION)\"," package.json
 	@$(MAKE) clean build test
 	@echo "Publishing version: $(VERSION)"
-	npm publish
+	pnpm publish
