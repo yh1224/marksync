@@ -68,16 +68,16 @@ export class ZennRepository {
                 } else {
                     fs.mkdirSync(path.dirname(this.gitDir), {recursive: true});
                     process.stderr.write(`# clone from ${this.gitUrl}\n`);
-                    this.repository = await nodegit.Clone.clone(this.gitUrl, this.gitDir, {
+                    this.repository = await nodegit.Clone(this.gitUrl, this.gitDir, {
                         bare: 1,
                         fetchOpts: {callbacks: {credentials: this.credentials}},
                     });
                 }
+                this.repository!.setWorkdir(this.getWorkDir(), 0);
             } catch (e) {
                 process.stderr.write(`${e}\n`);
                 return null;
             }
-            this.repository.setWorkdir(this.getWorkDir(), 0);
         }
         return this.repository;
     }

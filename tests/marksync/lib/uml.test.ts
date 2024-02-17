@@ -5,7 +5,7 @@ import {UmlUtils} from "../../../src/marksync/lib/uml";
 describe("UmlUtils", () => {
     test("convertToUrl", async () => {
         const result = await UmlUtils.convertToUrl("a -> b: foo\na <-- b");
-        expect(result).toBe("http://www.plantuml.com/plantuml/svg/SoWkIImgAStDuKfKqBLJIB9IIClF1x9jT7KLahWSKlDIG780");
+        expect(result).toBe("http://www.plantuml.com/plantuml/svg/SoWkIImgAStDuKfKqBLJIB9IIClFvqfKiD7LLKZYSaZDIm790G00");
     });
 
     test("convertToTempFile", async () => {
