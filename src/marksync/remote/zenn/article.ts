@@ -92,6 +92,7 @@ export class ZennArticle extends RemoteDocument implements IZennArticle {
                 }
                 newBody += `![](${pngFileName})\n`;
                 fUml = false;
+                umlBody = "";
             } else if (fUml) {
                 umlBody += line;
             } else {
