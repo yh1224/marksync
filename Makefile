@@ -27,4 +27,4 @@ endif
 	grep "\"version\": \"$(VERSION)\"," package.json
 	@$(MAKE) clean build test
 	@echo "Publishing version: $(VERSION)"
-	pnpm publish
+	pnpm publish --no-git-checks
