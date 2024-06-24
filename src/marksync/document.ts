@@ -1,6 +1,7 @@
 import axios from "axios";
 import * as fs from "fs";
 import * as path from "path";
+import fm from "front-matter";
 
 /**
  * Local document class.
@@ -136,7 +137,8 @@ export class LocalDocument {
 
         // title と body に分離
         let title = "";
-        let body = fs.readFileSync(path.join(dirPath, LocalDocument.DOCUMENT_FILENAME)).toString();
+        const doc = fm(fs.readFileSync(path.join(dirPath, LocalDocument.DOCUMENT_FILENAME)).toString());
+        let body = doc.body;
         const lines = body.split(/(?<=\n)/);
         if (lines[0].match(/^#/)) {
             title = lines.shift()!.replace(/^#\s*/, "").trim();
