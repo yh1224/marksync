@@ -1,6 +1,6 @@
 # marksync
 
-[![npm version](https://badge.fury.io/js/marksync.png)](https://badge.fury.io/js/marksync)
+[![npm version](https://badge.fury.io/js/marksync.png)](https://badge.fury.io/js/marksync) [![DeepWiki](https://img.shields.io/badge/DeepWiki-Documentation-blue)](https://deepwiki.com/yh1224/marksync)
 
 Synchronize Markdown documents to services.
 
